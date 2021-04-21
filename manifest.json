@@ -1,0 +1,5 @@
+{
+  "name": "Twitch",
+  "slug": "twitch",
+  "load": ["dist/index.js"]
+}
