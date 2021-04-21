@@ -1,5 +1,5 @@
 import { Espresso } from '../../../../espresso/declarations/core/espresso';
-import { Input } from '../../../../espresso/declarations/typings/inputs';
+import { Input, RepeaterInput } from '../../../../espresso/declarations/typings/inputs';
 import Bot from '../bot';
 
 declare const espresso: Espresso;
@@ -48,11 +48,17 @@ espresso.triggers.register({
     },
 });
 
-interface TwtichChatCommand {
-    aliases: string[];
+interface CommandVariable {
+    name: string;
+    description: string;
 }
 
-const ChatCommandSettings: Input<TwtichChatCommand>[] = [
+interface ChatCommand {
+    aliases: string[];
+    variables: CommandVariable[];
+}
+
+const ChatCommandSettings: Input<ChatCommand, CommandVariable>[] = [
     {
         type: 'chips',
         key: 'aliases',
@@ -62,6 +68,29 @@ const ChatCommandSettings: Input<TwtichChatCommand>[] = [
         textTransform: 'lowercase',
         duplicates: false,
     },
+    {
+        type: 'repeater',
+        key: 'variables',
+        label: 'Command variables',
+        addLabel: 'Add variable',
+        emptyLabel: 'No variables',
+        removeLabel: 'Remove variable',
+        default: [],
+        inputs: [
+            {
+                type: 'text',
+                key: 'name',
+                label: 'Variable name',
+                default: '',
+            },
+            {
+                type: 'text',
+                key: 'description',
+                label: 'Variable description',
+                default: '',
+            },
+        ],
+    },
 ];
 
 espresso.triggers.register({
@@ -70,7 +99,7 @@ espresso.triggers.register({
     provider: 'Twitch',
     catigory: 'Twitch chat',
     settings: ChatCommandSettings,
-    predicate: (data: ChatMessageData & { aliase: string }, settings: TwtichChatCommand) => {
+    predicate: (data: ChatMessageData & { aliase: string }, settings: ChatCommand) => {
         return settings.aliases.includes(data.aliase);
     },
 });
