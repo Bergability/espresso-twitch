@@ -33,11 +33,8 @@ espresso.actions.register({
     settings: twitchSendMessageSettings,
     // @ts-ignore
     run: async (triggerSettings, actionSettings, triggerData) => {
-        console.log(triggerData);
-
         // @ts-ignore
-        Bot.say('bergability', espresso.parseVariables(actionSettings.message, triggerData));
-        return true;
+        Bot.say('bergability', espresso.parseVariables(actionSettings.message, triggerData)).catch((e) => console.log);
     },
 });
 
@@ -48,6 +45,7 @@ espresso.actions.register({
  */
 interface TwitchBanUserAction {
     user: string;
+    reason: string;
 }
 
 const banUserSettings: Input<TwitchBanUserAction>[] = [
@@ -56,6 +54,13 @@ const banUserSettings: Input<TwitchBanUserAction>[] = [
         label: 'Username',
         key: 'user',
         helper: 'The user to ban from Twitch chat.',
+        default: '',
+    },
+    {
+        type: 'text',
+        label: 'Ban reason',
+        key: 'reason',
+        helper: 'The reason for banning this user.',
         default: '',
     },
 ];
@@ -69,7 +74,7 @@ espresso.actions.register({
     settings: banUserSettings,
     // @ts-ignore
     run: async (triggerSettings, actionSettings: TwitchBanUserAction) => {
-        Bot.ban('bergability', trimUsername(actionSettings.user));
+        Bot.ban('bergability', trimUsername(actionSettings.user)).catch((e) => console.log);
     },
 });
 
@@ -101,7 +106,7 @@ espresso.actions.register({
     settings: unbanUserSettings,
     // @ts-ignore
     run: async (triggerSettings, actionSettings: TwitchBanUserAction) => {
-        Bot.unban('bergability', trimUsername(actionSettings.user));
+        Bot.unban('bergability', trimUsername(actionSettings.user)).catch((e) => console.log);
     },
 });
 
@@ -168,6 +173,6 @@ espresso.actions.register({
                 unit = 3600;
                 break;
         }
-        Bot.timeout('bergability', trimUsername(actionSettings.user), actionSettings.duration * unit);
+        Bot.timeout('bergability', trimUsername(actionSettings.user), actionSettings.duration * unit).catch((e) => console.log);
     },
 });

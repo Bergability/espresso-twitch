@@ -1,9 +1,14 @@
 import { Espresso } from '../../../../espresso/declarations/core/espresso';
-import { Input, RepeaterInput } from '../../../../espresso/declarations/typings/inputs';
-import Bot from '../bot';
+import { Input } from '../../../../espresso/declarations/typings/inputs';
+import { Variable } from '../../../../espresso/declarations/typings/espresso';
 
 declare const espresso: Espresso;
 
+/**
+ *
+ * Chat message trigger
+ *
+ */
 interface ChatMessageData {
     message: string;
 }
@@ -31,6 +36,11 @@ const TwtichChatMessageContainsSettings: Input<TwtichChatMessageContains>[] = [
     },
 ];
 
+/**
+ *
+ * Chat message contains
+ *
+ */
 espresso.triggers.register({
     slug: 'twitch-chat-message-contains',
     name: 'Chat message contains',
@@ -48,6 +58,11 @@ espresso.triggers.register({
     },
 });
 
+/**
+ *
+ * Chat command
+ *
+ */
 interface CommandVariable {
     name: string;
     description: string;
@@ -55,7 +70,10 @@ interface CommandVariable {
 
 interface ChatCommand {
     aliases: string[];
+    useVariables: boolean;
     variables: CommandVariable[];
+    requireLast: boolean;
+    concatLast: boolean;
 }
 
 const ChatCommandSettings: Input<ChatCommand, CommandVariable>[] = [
@@ -69,6 +87,12 @@ const ChatCommandSettings: Input<ChatCommand, CommandVariable>[] = [
         duplicates: false,
     },
     {
+        type: 'toggle',
+        key: 'useVariables',
+        label: 'Use custom variables in this command?',
+        default: false,
+    },
+    {
         type: 'repeater',
         key: 'variables',
         label: 'Command variables',
@@ -76,6 +100,7 @@ const ChatCommandSettings: Input<ChatCommand, CommandVariable>[] = [
         emptyLabel: 'No variables',
         removeLabel: 'Remove variable',
         default: [],
+        conditions: [{ value: 'useVariables', operator: 'equal', comparison: true }],
         inputs: [
             {
                 type: 'text',
@@ -91,6 +116,26 @@ const ChatCommandSettings: Input<ChatCommand, CommandVariable>[] = [
             },
         ],
     },
+    {
+        type: 'toggle',
+        key: 'requireLast',
+        label: 'Require last variable',
+        default: true,
+        conditions: [
+            { value: 'useVariables', operator: 'equal', comparison: true },
+            { value: 'variables', operator: 'array-length-greater-than', comparison: 0 },
+        ],
+    },
+    {
+        type: 'toggle',
+        key: 'concatLast',
+        label: 'Concatenate end of message into final variable?',
+        default: false,
+        conditions: [
+            { value: 'useVariables', operator: 'equal', comparison: true },
+            { value: 'variables', operator: 'array-length-greater-than', comparison: 0 },
+        ],
+    },
 ];
 
 espresso.triggers.register({
@@ -99,7 +144,66 @@ espresso.triggers.register({
     provider: 'Twitch',
     catigory: 'Twitch chat',
     settings: ChatCommandSettings,
+    variables: (settings: ChatCommand) => {
+        const variables: Variable[] = [
+            { name: 'message', description: 'The chat message containing this command.' },
+            { name: 'username', description: 'The username of the user who sent this message.' },
+        ];
+
+        return settings.variables.reduce<Variable[]>((acc, { name, description }) => {
+            return [...acc, { name, description }];
+        }, variables);
+    },
+    getVariables: (triggerData: any, triggerSettings: ChatCommand) => {
+        // Exit if not using variables
+        if (!triggerSettings.useVariables) return triggerData;
+
+        let splitMessage: string[] = triggerData.message.split(' ');
+        splitMessage.shift();
+
+        triggerSettings.variables.forEach((variable, index) => {
+            // If is the last variable
+            if (index === triggerSettings.variables.length - 1 && triggerSettings.concatLast === true) {
+                splitMessage = [splitMessage.join(' ')];
+            }
+
+            triggerData[variable.name] = splitMessage[0];
+            splitMessage.shift();
+        });
+        return triggerData;
+    },
     predicate: (data: ChatMessageData & { aliase: string }, settings: ChatCommand) => {
         return settings.aliases.includes(data.aliase);
     },
+});
+
+/**
+ *
+ * Custom reward
+ *
+ */
+interface CustomReward {
+    reward: string;
+}
+
+const customRewardSettings: Input<CustomReward>[] = [
+    {
+        type: 'select',
+        key: 'reward',
+        default: '',
+        label: 'Custom reward',
+        options: 'twitch:custom-rewards',
+    },
+];
+espresso.triggers.register({
+    slug: 'twitch-custom-reward',
+    name: 'Custom reward',
+    provider: 'Twitch',
+    catigory: 'Rewards',
+    settings: customRewardSettings,
+    variables: [
+        { name: 'message', description: 'The chat message containing this command.' },
+        { name: 'username', description: 'The username of the user who sent this message.' },
+        { name: 'reward_id', description: 'The ID of the reward request, use this to auto redeem / reject a reward.' },
+    ],
 });
