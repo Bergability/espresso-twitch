@@ -1,4 +1,3 @@
-import fetch from 'node-fetch';
 import { trimUsername } from '../utilities';
 import { bergsId } from '../tokens';
 import { Espresso } from '../../../../espresso/declarations/core/espresso';
@@ -182,40 +181,83 @@ espresso.actions.register({
 
 /**
  *
- * Reject reward
+ * Accept / Reject reward
  *
  */
-interface RejectReward {
+interface AcceptRejectReward {
     redemtionId: string;
     rewardId: string;
 }
 
-const rejectRewardSettings: Input<RejectReward>[] = [
+const acceptRewardSettings: Input<AcceptRejectReward>[] = [
     {
         type: 'select',
         key: 'rewardId',
         default: '',
         label: 'Custom reward',
         options: 'twitch:custom-rewards-accessible',
+        helper: 'Not seeing your reward? Espresso can only manage rewards that it has created',
     },
     {
         type: 'text',
         label: 'Redemption ID',
         key: 'redemtionId',
-        helper: 'The reward ID you want to reject. This should probably come from a trigger variable.',
+        helper: 'The redemption ID you want to fulfill. This should probably come from a trigger variable.',
+        default: '',
+    },
+];
+
+espresso.actions.register({
+    slug: 'twitch-fulfill-custom-reward',
+    name: 'Fulfill custom reward',
+    provider: 'Twitch',
+    catigory: 'Rewards',
+    description: 'Fulfill a custom reward request.',
+    settings: acceptRewardSettings,
+    // @ts-ignore
+    run: async (triggerSettings, actionSettings: AcceptRejectReward, triggerData) => {
+        const redemtionId = espresso.parseVariables(actionSettings.redemtionId, triggerData);
+
+        try {
+            await TwitchAPIFetch(
+                `https://api.twitch.tv/helix/channel_points/custom_rewards/redemptions?broadcaster_id=${bergsId}&reward_id=${actionSettings.rewardId}&id=${redemtionId}`,
+                'PATCH',
+                { status: 'FULFILLED' }
+            );
+            return true;
+        } catch (e) {
+            return false;
+        }
+    },
+});
+
+const rejectRewardSettings: Input<AcceptRejectReward>[] = [
+    {
+        type: 'select',
+        key: 'rewardId',
+        default: '',
+        label: 'Custom reward',
+        options: 'twitch:custom-rewards-accessible',
+        helper: 'Not seeing your reward? Espresso can only manage rewards that it has created',
+    },
+    {
+        type: 'text',
+        label: 'Redemption ID',
+        key: 'redemtionId',
+        helper: 'The redemption ID you want to reject. This should probably come from a trigger variable.',
         default: '',
     },
 ];
 
 espresso.actions.register({
     slug: 'twitch-reject-custom-reward',
-    name: 'Reject reward',
+    name: 'Reject custom reward',
     provider: 'Twitch',
     catigory: 'Rewards',
     description: 'Reject a custom reward request.',
     settings: rejectRewardSettings,
     // @ts-ignore
-    run: async (triggerSettings, actionSettings: RejectReward, triggerData) => {
+    run: async (triggerSettings, actionSettings: AcceptRejectReward, triggerData) => {
         const redemtionId = espresso.parseVariables(actionSettings.redemtionId, triggerData);
 
         try {

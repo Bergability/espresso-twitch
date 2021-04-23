@@ -1,6 +1,6 @@
 import { Espresso } from '../../../../espresso/declarations/core/espresso';
 import { Option } from '../../../../espresso/declarations/typings/inputs';
-import { bergsAccessToken, clientId, bergsId } from '../tokens';
+import { bergsId } from '../tokens';
 import { CustomRewardPayload } from '../typings/api';
 import TwitchAPIFetch from '../api';
 
