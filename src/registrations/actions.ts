@@ -1,7 +1,10 @@
+import fetch from 'node-fetch';
 import { trimUsername } from '../utilities';
+import { bergsId } from '../tokens';
 import { Espresso } from '../../../../espresso/declarations/core/espresso';
 import { Input } from '../../../../espresso/declarations/typings/inputs';
 import Bot from '../bot';
+import TwitchAPIFetch from '../api';
 
 declare const espresso: Espresso;
 
@@ -174,5 +177,56 @@ espresso.actions.register({
                 break;
         }
         Bot.timeout('bergability', trimUsername(actionSettings.user), actionSettings.duration * unit).catch((e) => console.log);
+    },
+});
+
+/**
+ *
+ * Reject reward
+ *
+ */
+interface RejectReward {
+    redemtionId: string;
+    rewardId: string;
+}
+
+const rejectRewardSettings: Input<RejectReward>[] = [
+    {
+        type: 'select',
+        key: 'rewardId',
+        default: '',
+        label: 'Custom reward',
+        options: 'twitch:custom-rewards-accessible',
+    },
+    {
+        type: 'text',
+        label: 'Redemption ID',
+        key: 'redemtionId',
+        helper: 'The reward ID you want to reject. This should probably come from a trigger variable.',
+        default: '',
+    },
+];
+
+espresso.actions.register({
+    slug: 'twitch-reject-custom-reward',
+    name: 'Reject reward',
+    provider: 'Twitch',
+    catigory: 'Rewards',
+    description: 'Reject a custom reward request.',
+    settings: rejectRewardSettings,
+    // @ts-ignore
+    run: async (triggerSettings, actionSettings: RejectReward, triggerData) => {
+        const redemtionId = espresso.parseVariables(actionSettings.redemtionId, triggerData);
+
+        try {
+            await TwitchAPIFetch(
+                `https://api.twitch.tv/helix/channel_points/custom_rewards/redemptions?broadcaster_id=${bergsId}&reward_id=${actionSettings.rewardId}&id=${redemtionId}`,
+                'PATCH',
+                { status: 'CANCELED' }
+            );
+            return true;
+        } catch (e) {
+            return false;
+        }
     },
 });

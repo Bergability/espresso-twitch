@@ -1,6 +1,6 @@
 export const botOauth = 'oauth:teevb9iq9rfis1s7fina8sx61payov';
 export const clientId = 'kybgbb011cg2tnx6z1tjckxdutfkmu';
-export const bergsAccessToken = 'hakfzfy7t93561nqoz41oiae04kqwc';
+export const bergsAccessToken = 'aile0xkc3vg8m4vur4txw728drbq37';
 export const bergsId = '113128856';
 
 const scopes = [
@@ -21,6 +21,8 @@ const scopes = [
     'user:read:broadcast',
     'user:read:follows',
     'user:read:subscriptions',
+    'channel:read:subscriptions',
+    'channel:moderate',
 ];
 
 export const authUrl = `https://id.twitch.tv/oauth2/authorize?client_id=${clientId}&redirect_uri=http://localhost:23167/&response_type=token&scope=${scopes.join(
