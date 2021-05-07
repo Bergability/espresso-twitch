@@ -1,5 +1,4 @@
 import { trimUsername } from '../utilities';
-import { bergsId } from '../tokens';
 import { Espresso } from '../../../../espresso/declarations/core/espresso';
 import { Input } from '../../../../espresso/declarations/typings/inputs';
 import Bot from '../bot';
@@ -35,8 +34,8 @@ espresso.actions.register({
     settings: twitchSendMessageSettings,
     // @ts-ignore
     run: async (triggerSettings, actionSettings, triggerData) => {
-        // @ts-ignore
-        Bot.say('bergability', espresso.parseVariables(actionSettings.message, triggerData)).catch((e) => console.log);
+        if (Bot.client && Bot.client.readyState() === 'OPEN' && Bot.channel)
+            Bot.client.say(Bot.channel, espresso.parseVariables(actionSettings.message, triggerData)).catch((e) => console.log);
     },
 });
 
@@ -76,7 +75,8 @@ espresso.actions.register({
     settings: banUserSettings,
     // @ts-ignore
     run: async (triggerSettings, actionSettings: TwitchBanUserAction) => {
-        Bot.ban('bergability', trimUsername(actionSettings.user)).catch((e) => console.log);
+        if (Bot.client && Bot.client.readyState() !== 'OPEN' && Bot.channel)
+            Bot.client.ban(Bot.channel, trimUsername(actionSettings.user)).catch((e) => console.log);
     },
 });
 
@@ -108,7 +108,8 @@ espresso.actions.register({
     settings: unbanUserSettings,
     // @ts-ignore
     run: async (triggerSettings, actionSettings: TwitchBanUserAction) => {
-        Bot.unban('bergability', trimUsername(actionSettings.user)).catch((e) => console.log);
+        if (Bot.client && Bot.client.readyState() !== 'OPEN' && Bot.channel)
+            Bot.client.unban(Bot.channel, trimUsername(actionSettings.user)).catch((e) => console.log);
     },
 });
 
@@ -175,7 +176,8 @@ espresso.actions.register({
                 unit = 3600;
                 break;
         }
-        Bot.timeout('bergability', trimUsername(actionSettings.user), actionSettings.duration * unit).catch((e) => console.log);
+        if (Bot.client && Bot.client.readyState() !== 'OPEN' && Bot.channel)
+            Bot.client.timeout(Bot.channel, trimUsername(actionSettings.user), actionSettings.duration * unit).catch((e) => console.log);
     },
 });
 
@@ -205,6 +207,12 @@ const acceptRewardSettings: Input<AcceptRejectReward>[] = [
         helper: 'The redemption ID you want to fulfill. This should probably come from a trigger variable.',
         default: '',
     },
+    {
+        type: 'button',
+        label: 'Create new reward',
+        link: `http://localhost:${espresso.store.get('port')}/twitch/new-custom-reward`,
+        external: true,
+    },
 ];
 
 espresso.actions.register({
@@ -217,10 +225,13 @@ espresso.actions.register({
     // @ts-ignore
     run: async (triggerSettings, actionSettings: AcceptRejectReward, triggerData) => {
         const redemtionId = espresso.parseVariables(actionSettings.redemtionId, triggerData);
+        const mainId = espresso.store.get('twitch.main.id');
+
+        if (mainId === null) return false;
 
         try {
             await TwitchAPIFetch(
-                `https://api.twitch.tv/helix/channel_points/custom_rewards/redemptions?broadcaster_id=${bergsId}&reward_id=${actionSettings.rewardId}&id=${redemtionId}`,
+                `https://api.twitch.tv/helix/channel_points/custom_rewards/redemptions?broadcaster_id=${mainId}&reward_id=${actionSettings.rewardId}&id=${redemtionId}`,
                 'PATCH',
                 { status: 'FULFILLED' }
             );
@@ -247,6 +258,12 @@ const rejectRewardSettings: Input<AcceptRejectReward>[] = [
         helper: 'The redemption ID you want to reject. This should probably come from a trigger variable.',
         default: '',
     },
+    {
+        type: 'button',
+        label: 'Create new reward',
+        link: 'http://localhost:23167/twitch/new-custom-reward',
+        external: true,
+    },
 ];
 
 espresso.actions.register({
@@ -259,10 +276,13 @@ espresso.actions.register({
     // @ts-ignore
     run: async (triggerSettings, actionSettings: AcceptRejectReward, triggerData) => {
         const redemtionId = espresso.parseVariables(actionSettings.redemtionId, triggerData);
+        const mainId = espresso.store.get('twitch.main.id');
+
+        if (mainId === null) return false;
 
         try {
             await TwitchAPIFetch(
-                `https://api.twitch.tv/helix/channel_points/custom_rewards/redemptions?broadcaster_id=${bergsId}&reward_id=${actionSettings.rewardId}&id=${redemtionId}`,
+                `https://api.twitch.tv/helix/channel_points/custom_rewards/redemptions?broadcaster_id=${mainId}&reward_id=${actionSettings.rewardId}&id=${redemtionId}`,
                 'PATCH',
                 { status: 'CANCELED' }
             );

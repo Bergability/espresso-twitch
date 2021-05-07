@@ -1,5 +1,4 @@
 import WebSocket from 'ws';
-import { bergsAccessToken, bergsId } from './tokens';
 import { PubSubMessage, ParsedPubSubEvent } from './typings/pubsub';
 import { Espresso } from '../../../espresso/declarations/core/espresso';
 
@@ -10,12 +9,15 @@ class TwitchPubSub {
     private heartbeatInterval = 1000 * 60; //ms between PING's
     private reconnectInterval = 1000 * 3; //ms to wait before reconnect
     private heartbeatHandle?: NodeJS.Timeout;
+    private token?: string;
+    private channelId?: string;
 
-    constructor() {
-        this.connect();
+    public init(token: string, channelId: string) {
+        this.token = token;
+        this.channelId = channelId;
     }
 
-    private connect() {
+    public connect() {
         this.ws = new WebSocket('wss://pubsub-edge.twitch.tv');
         this.ws.onopen = this.onOpen.bind(this);
         this.ws.onclose = this.onClose.bind(this);
@@ -24,19 +26,23 @@ class TwitchPubSub {
     }
 
     private onOpen(event: any) {
-        console.log('Connected to Twitch PubSub');
+        console.log('open!');
 
         this.heartbeat();
         this.heartbeatHandle = setInterval(() => {
             this.heartbeat();
         }, this.heartbeatInterval);
 
-        this.listen(`channel-bits-events-v2.${bergsId}`);
-        this.listen(`channel-bits-badge-unlocks.${bergsId}`);
-        this.listen(`channel-points-channel-v1.${bergsId}`);
-        this.listen(`channel-subscribe-events-v1.${bergsId}`);
-        this.listen(`chat_moderator_actions.${bergsId}`);
-        this.listen(`channel.follow.${bergsId}`);
+        if (this.token) {
+            console.log('adding listeners');
+
+            // this.listen(`channel-bits-events-v2.${this.channelId}`);
+            // this.listen(`channel-bits-badge-unlocks.${this.channelId}`);
+            this.listen(`channel-points-channel-v1.${this.channelId}`);
+            // this.listen(`channel-subscribe-events-v1.${this.channelId}`);
+            // this.listen(`chat_moderator_actions.*.${this.channelId}`);
+            // this.listen(`channel.follow.${this.channelId}`);
+        }
     }
 
     private nonce(length: number) {
@@ -56,15 +62,22 @@ class TwitchPubSub {
 
     private onMessage(e: any) {
         const data = JSON.parse(e.data) as PubSubMessage;
+        console.log(data);
         if (data.type === 'MESSAGE') {
             const message = JSON.parse(data.data.message) as ParsedPubSubEvent;
 
             switch (message.type) {
                 case 'reward-redeemed':
+                    console.log('reward redmeededddd');
+
                     espresso.triggers.trigger('twitch-custom-reward', {
                         username: message.data.redemption.user.display_name,
                         redemption_id: message.data.redemption.id,
+                        reward_id: message.data.redemption.reward.id,
                     });
+                    break;
+
+                case 'moderation_action':
                     break;
             }
         }
@@ -75,12 +88,17 @@ class TwitchPubSub {
     }
 
     private listen(topic: string) {
+        if (!this.token) {
+            console.log('Error: attempting to listen to Twitch PubSub event without an auth token.');
+            return;
+        }
+
         const message = {
             type: 'LISTEN',
             nonce: this.nonce(15),
             data: {
                 topics: [topic],
-                auth_token: bergsAccessToken,
+                auth_token: this.token,
             },
         };
         this.ws.send(JSON.stringify(message));
@@ -95,3 +113,5 @@ class TwitchPubSub {
 }
 
 const pubSub = new TwitchPubSub();
+
+export default pubSub;

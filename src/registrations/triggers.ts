@@ -122,8 +122,10 @@ const ChatCommandSettings: Input<ChatCommand, CommandVariable>[] = [
         label: 'Require last variable',
         default: true,
         conditions: [
-            { value: 'useVariables', operator: 'equal', comparison: true },
-            { value: 'variables', operator: 'array-length-greater-than', comparison: 0 },
+            [
+                { value: 'useVariables', operator: 'equal', comparison: true },
+                { value: 'variables', operator: 'array-length-greater-than', comparison: 0 },
+            ],
         ],
     },
     {
@@ -132,8 +134,10 @@ const ChatCommandSettings: Input<ChatCommand, CommandVariable>[] = [
         label: 'Concatenate end of message into final variable?',
         default: false,
         conditions: [
-            { value: 'useVariables', operator: 'equal', comparison: true },
-            { value: 'variables', operator: 'array-length-greater-than', comparison: 0 },
+            [
+                { value: 'useVariables', operator: 'equal', comparison: true },
+                { value: 'variables', operator: 'array-length-greater-than', comparison: 0 },
+            ],
         ],
     },
 ];
@@ -199,10 +203,11 @@ const customRewardSettings: Input<CustomReward>[] = [
     {
         type: 'button',
         label: 'Create new reward',
-        link: 'http://localhost:23167/twitch/new-custom-reward',
+        link: `http://localhost:${espresso.store.get('port')}/twitch/new-custom-reward`,
         external: true,
     },
 ];
+
 espresso.triggers.register({
     slug: 'twitch-custom-reward',
     name: 'Custom reward',
@@ -213,5 +218,9 @@ espresso.triggers.register({
         { name: 'message', description: 'The chat message sent with the command. This will be blank if no message is required.' },
         { name: 'username', description: 'The username of the user who sent this message.' },
         { name: 'redemption_id', description: 'The ID of the reward request, use this to auto redeem / reject a reward.' },
+        { name: 'reward_id', description: 'The ID of the custom reward that has been redeemed' },
     ],
+    predicate: (data: any, settings: CustomReward) => {
+        return settings.reward === data.reward_id;
+    },
 });

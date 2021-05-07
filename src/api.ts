@@ -1,5 +1,7 @@
 import fetch from 'node-fetch';
-import { clientId, bergsAccessToken } from './tokens';
+import { Espresso } from '../../../espresso/declarations/core/espresso';
+import { clientId } from './tokens';
+declare const espresso: Espresso;
 
 interface Payload {
     method: string;
@@ -7,13 +9,13 @@ interface Payload {
     body?: string;
 }
 
-const TwitchAPIFetch = async (url: string, method: string, body?: any) => {
+const TwitchAPIFetch = async (url: string, method: string, body?: any, token?: string) => {
     try {
         const payload: Payload = {
             method,
             headers: {
                 'Client-Id': clientId,
-                Authorization: `Bearer ${bergsAccessToken}`,
+                Authorization: `Bearer ${token || espresso.store.get('twitch.main.token')}`,
                 'Content-Type': 'application/json',
             },
         };

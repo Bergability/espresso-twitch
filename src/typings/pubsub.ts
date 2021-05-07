@@ -6,6 +6,11 @@ export interface PubSubMessage {
     };
 }
 
+/**
+ *
+ * Reward redemption
+ *
+ */
 export interface PubSubRewardRedemtion {
     timestamp: string;
     redemption: {
@@ -62,4 +67,27 @@ export interface ParsedRewardRedeemed {
     data: PubSubRewardRedemtion;
 }
 
-export type ParsedPubSubEvent = ParsedRewardRedeemed;
+/**
+ *
+ * Moderation event
+ *
+ */
+export interface PubSubModerationEvent {
+    type: 'chat_login_moderation';
+    moderation_action: string[];
+    args: string[];
+    created_by: string;
+    created_by_user_id: string;
+    created_at: string;
+    msg_id: string;
+    target_user_id: string;
+    target_user_login: string;
+    from_automod: boolean;
+}
+
+export interface ParsedModerationEvent {
+    type: 'moderation_action';
+    data: PubSubModerationEvent;
+}
+
+export type ParsedPubSubEvent = ParsedRewardRedeemed | ParsedModerationEvent;
