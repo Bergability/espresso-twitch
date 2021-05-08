@@ -1,6 +1,7 @@
 import path from 'path';
 import { Espresso } from '../../../../espresso/declarations/core/espresso';
 import TwitchAPIFetch from '../api';
+import Twitch from '../twitch';
 
 declare const espresso: Espresso;
 
@@ -41,7 +42,7 @@ espresso.server.register({
 });
 
 espresso.server.register({
-    path: '/twitch/welcome',
+    path: '/twitch',
     method: 'get',
     response: (req, res) => {
         const pluginDirPath = espresso.plugins.getPath('twitch');
@@ -50,7 +51,7 @@ espresso.server.register({
             return;
         }
 
-        res.sendFile(path.join(pluginDirPath, 'public', 'welcome.html'));
+        res.sendFile(path.join(pluginDirPath, 'public', 'dashboard.html'));
     },
 });
 
@@ -114,23 +115,57 @@ espresso.server.register({
             return;
         }
 
-        espresso.store.set(`twitch.${account}.token`, token);
-        TwitchAPIFetch('https://api.twitch.tv/helix/users', 'get', undefined, token)
-            .then((json) => {
-                if (json.data[0]) {
-                    const username = json.data[0].display_name;
-                    const userId = json.data[0].id;
-                    espresso.store.set(`twitch.${account}.username`, username);
-                    espresso.store.set(`twitch.${account}.id`, userId);
-                    res.json({ username, userId });
-                    return;
-                }
+        Twitch.updateUser(account, token).catch((e) => {
+            console.log(e);
+        });
+    },
+});
 
-                res.json({});
-            })
-            .catch((e) => {
-                console.log(e);
-                res.json({});
+espresso.server.register({
+    path: '/api/twitch/auth/disconnect',
+    method: 'post',
+    response: async (req, res) => {
+        const { account } = req.body;
+
+        if (!account) {
+            res.status(400);
+            res.json({
+                message: 'Account not specified',
             });
+            return;
+        }
+
+        if (account !== 'main' && account !== 'bot') {
+            res.status(400);
+            res.json({
+                message: 'Invalid account type',
+            });
+            return;
+        }
+
+        try {
+            const success = await Twitch.invalidateUser(account);
+            res.json({
+                disconnected: success,
+            });
+        } catch (e) {
+            res.status(500).send(e);
+        }
+    },
+});
+
+espresso.server.register({
+    path: '/api/twitch/status',
+    method: 'get',
+    response: async (req, res) => {
+        try {
+            const main = await Twitch.validateUser('main');
+            const bot = await Twitch.validateUser('bot');
+
+            res.json({ main, bot });
+        } catch (e) {
+            res.status(500);
+            res.send(e);
+        }
     },
 });

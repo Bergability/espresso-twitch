@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashboard | Twitch for Espresso</title>
+
+    <link rel="preconnect" href="https://fonts.gstatic.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,400;0,700;1,400;1,700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        background-color: #303030;
+        color: white;
+        font-family: "Roboto", sans-serif;
+        text-align: center;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        width: 100%;
+      }
+
+      a {
+        color: #2196f3;
+      }
+
+      .wrapper {
+        width: 50%;
+      }
+
+      .account {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border: solid 1px white;
+        border-radius: 4px;
+        width: 100%;
+        padding: 0 20px;
+      }
+
+      .account:not(:last-child) {
+        margin-bottom: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrapper">
+      <p style="font-weight: bold; font-size: 1.5em">
+        Welcome to Twitch for Espresso!
+      </p>
+
+      <p style="margin-bottom: 50px">
+        Use the links below to connect / disconnect your Twitch accounts. Note
+        that you should probably open the bot login link in a private browser
+        window so it doens't log you in as your main account.
+      </p>
+
+      <div id="main-account" class="account">
+        <p>Main account</p>
+        <a href="#" id="main-account-action" data-account="main">Loading...</a>
+      </div>
+
+      <div id="bot-account" class="account">
+        <p>Bot account</p>
+        <a href="#" id="bot-account-action" data-account="bot">Loading...</a>
+      </div>
+    </div>
+
+    <script>
+      const onClick = (e) => {
+        const target = e.target;
+        const account = target.getAttribute("data-account");
+        const connected = target.getAttribute("data-connected") === "true";
+
+        console.log(connected);
+        console.log(account);
+
+        if (!connected) return;
+
+        e.preventDefault();
+        fetch("/api/twitch/auth/disconnect", {
+          method: "post",
+          body: JSON.stringify({ account }),
+          headers: {
+            "Content-Type": "application/json",
+          },
+        })
+          .then((res) => {
+            init();
+          })
+          .catch((e) => {
+            console.log(e);
+          });
+      };
+      const mainAction = document.getElementById("main-account-action");
+      const botAction = document.getElementById("bot-account-action");
+
+      mainAction.addEventListener("click", onClick);
+      botAction.addEventListener("click", onClick);
+
+      const init = async () => {
+        try {
+          const res = await fetch("/api/twitch/status");
+
+          if (res.status !== 200) return;
+
+          const json = await res.json();
+
+          const clientId = "kybgbb011cg2tnx6z1tjckxdutfkmu";
+          const redirectUrl = `http://localhost:23167/twitch/auth`;
+          const authUrl = `https://id.twitch.tv/oauth2/authorize?client_id=${clientId}&response_type=token`;
+
+          const userScopes = [
+            "bits:read",
+            "channel:manage:broadcast",
+            "channel:manage:redemptions",
+            "channel:read:hype_train",
+            "channel:read:redemptions",
+            "channel:read:subscriptions",
+            "channel:moderate",
+            "moderation:read",
+            "user:edit",
+            "user:read:broadcast",
+            "user:read:follows",
+          ];
+
+          const botScopes = ["channel:moderate", "chat:edit", "chat:read"];
+
+          const mainAction = document.getElementById("main-account-action");
+          const botAction = document.getElementById("bot-account-action");
+
+          mainAction.addEventListener("click", onClick);
+          botAction.addEventListener("click", onClick);
+
+          if (json.main) {
+            mainAction.innerHTML = "Disconnect main account";
+            mainAction.setAttribute("data-connected", "true");
+          } else {
+            mainAction.innerHTML = "Connect main account";
+            mainAction.setAttribute("data-connected", "false");
+            mainAction.setAttribute(
+              "href",
+              `${authUrl}&redirect_uri=${
+                redirectUrl + "/main"
+              }&scope=${userScopes.join("%20")}`
+            );
+          }
+
+          if (json.bot) {
+            botAction.innerHTML = "Disconnect bot account";
+            botAction.setAttribute("data-connected", "true");
+          } else {
+            botAction.innerHTML = "Connect bot account";
+            botAction.setAttribute("data-connected", "false");
+            botAction.setAttribute(
+              "href",
+              `${authUrl}&redirect_uri=${
+                redirectUrl + "/bot"
+              }&scope=${botScopes.join("%20")}`
+            );
+          }
+        } catch (e) {
+          throw e;
+        }
+      };
+      init();
+    </script>
+  </body>
+</html>
