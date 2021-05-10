@@ -31,6 +31,7 @@ espresso.actions.register({
     catigory: 'Chat',
     provider: 'Twitch',
     description: 'Send a message in Twitch chat.',
+    version: '1.0.0',
     settings: twitchSendMessageSettings,
     // @ts-ignore
     run: async (triggerSettings, actionSettings, triggerData) => {
@@ -72,6 +73,7 @@ espresso.actions.register({
     catigory: 'Chat',
     provider: 'Twitch',
     description: 'Ban a selected user from Twitch chat.',
+    version: '1.0.0',
     settings: banUserSettings,
     // @ts-ignore
     run: async (triggerSettings, actionSettings: TwitchBanUserAction) => {
@@ -105,6 +107,7 @@ espresso.actions.register({
     catigory: 'Chat',
     provider: 'Twitch',
     description: 'Unban a selected user from Twitch chat.',
+    version: '1.0.0',
     settings: unbanUserSettings,
     // @ts-ignore
     run: async (triggerSettings, actionSettings: TwitchBanUserAction) => {
@@ -158,6 +161,7 @@ espresso.actions.register({
     catigory: 'Chat',
     provider: 'Twitch',
     description: 'Timeout a user from Twitch chat for a set duration.',
+    version: '1.0.0',
     settings: timeoutUserSettings,
     // @ts-ignore
     run: async (triggerSettings, actionSettings: TwitchTimeoutUserAction) => {
@@ -221,6 +225,7 @@ espresso.actions.register({
     provider: 'Twitch',
     catigory: 'Rewards',
     description: 'Fulfill a custom reward request.',
+    version: '1.0.0',
     settings: acceptRewardSettings,
     // @ts-ignore
     run: async (triggerSettings, actionSettings: AcceptRejectReward, triggerData) => {
@@ -272,6 +277,7 @@ espresso.actions.register({
     provider: 'Twitch',
     catigory: 'Rewards',
     description: 'Reject a custom reward request.',
+    version: '1.0.0',
     settings: rejectRewardSettings,
     // @ts-ignore
     run: async (triggerSettings, actionSettings: AcceptRejectReward, triggerData) => {

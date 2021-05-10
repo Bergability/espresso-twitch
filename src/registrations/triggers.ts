@@ -46,6 +46,7 @@ espresso.triggers.register({
     name: 'Chat message contains',
     provider: 'Twitch',
     catigory: 'Twitch chat',
+    version: '1.0.0',
     settings: TwtichChatMessageContainsSettings,
     predicate: (data: ChatMessageData, settings: TwtichChatMessageContains) => {
         let shouldRun = false;
@@ -147,6 +148,7 @@ espresso.triggers.register({
     name: 'Twitch chat command',
     provider: 'Twitch',
     catigory: 'Twitch chat',
+    version: '1.0.0',
     settings: ChatCommandSettings,
     variables: (settings: ChatCommand) => {
         const variables: Variable[] = [
@@ -213,6 +215,7 @@ espresso.triggers.register({
     name: 'Custom reward',
     provider: 'Twitch',
     catigory: 'Rewards',
+    version: '1.0.0',
     settings: customRewardSettings,
     variables: [
         { name: 'message', description: 'The chat message sent with the command. This will be blank if no message is required.' },
