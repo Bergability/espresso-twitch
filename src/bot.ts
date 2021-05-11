@@ -4,19 +4,11 @@ import { Espresso } from '../../../espresso/declarations/core/espresso';
 declare const espresso: Espresso;
 
 class EspressoTwitchBot {
-    public client?: tmi.Client;
-    public channel?: string;
+    public client: tmi.Client;
 
-    private username?: string;
-    private token?: string;
+    constructor(public username: string, private token: string, public channel: string) {
+        console.log('New bot!');
 
-    public init(username: string, token: string, channel: string) {
-        // Set internal vars
-        this.username = username;
-        this.token = token;
-        this.channel = channel;
-
-        // Start a new client
         this.client = new tmi.Client({
             // options: { debug: true, messagesLogLevel: 'warn' },
             connection: {
@@ -24,50 +16,51 @@ class EspressoTwitchBot {
                 secure: true,
             },
             identity: {
-                username,
-                password: `oauth:${token}`,
+                username: this.username,
+                password: `oauth:${espresso.tokens.get(this.token)}`,
             },
-            channels: [channel],
+            channels: [this.channel],
         });
 
         // Set on message listener
-        this.client.on('message', (channel, tags, message, self) => {
-            if (self) return;
-            let exclude: string[] = [];
+        this.client.on('message', this.onMessage.bind(this));
 
-            switch (tags['message-type']) {
-                case 'chat':
-                    const messageData = {
-                        message,
-                        username: tags.username,
-                    };
-
-                    exclude = [...exclude, ...espresso.triggers.trigger('twitch-chat-message', messageData, exclude)];
-                    exclude = [...exclude, ...espresso.triggers.trigger('twitch-chat-message-contains', messageData, exclude)];
-
-                    if (message.startsWith('!')) {
-                        const aliase = message.split(' ')[0].substr(1);
-                        exclude = [...exclude, ...espresso.triggers.trigger('twitch-chat-command', { ...messageData, aliase }, exclude)];
-                    }
-                    break;
-
-                case 'action':
-                    console.log('action');
-                    console.log(tags);
-                    break;
-            }
+        this.client.connect().catch((e) => {
+            console.log(e);
         });
     }
 
-    public connect() {
-        if (this.client) {
-            this.client.connect().catch((e) => {
-                console.log(e);
-            });
+    private onMessage(channel: string, tags: tmi.ChatUserstate, message: string, self: boolean) {
+        // NEVER react to a message from the bot account
+        if (self) return;
+
+        // Leave if somehow the channel is not the one we are expecting
+        if (channel !== `#${this.channel.toLowerCase()}`) return;
+
+        let exclude: string[] = [];
+
+        switch (tags['message-type']) {
+            case 'chat':
+                const messageData = {
+                    message,
+                    username: tags.username,
+                };
+
+                exclude = [...exclude, ...espresso.triggers.trigger('twitch-chat-message', messageData, exclude)];
+                exclude = [...exclude, ...espresso.triggers.trigger('twitch-chat-message-contains', messageData, exclude)];
+
+                if (message.startsWith('!')) {
+                    const aliase = message.split(' ')[0].substr(1);
+                    exclude = [...exclude, ...espresso.triggers.trigger('twitch-chat-command', { ...messageData, aliase }, exclude)];
+                }
+                break;
+
+            case 'action':
+                console.log('action');
+                console.log(tags);
+                break;
         }
     }
 }
 
-const Bot = new EspressoTwitchBot();
-
-export default Bot;
+export default EspressoTwitchBot;

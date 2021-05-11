@@ -2,8 +2,8 @@ import fetch from 'node-fetch';
 import { clientId } from './tokens';
 import TwitchAPIFetch from './api';
 import { Espresso } from '../../../espresso/declarations/core/espresso';
-// import Bot from './bot';
-// import PubSub from './pubsub';
+import ChatClient from './bot';
+import PubSub from './pubsub';
 
 declare const espresso: Espresso;
 
@@ -21,10 +21,17 @@ interface Settings {
     version: string;
 }
 
+interface UserChangeEvent {
+    type: UserType;
+    user: UserData;
+}
+
 class Twitch {
     public version: string;
     private main: UserData | null;
     private bot: UserData | null;
+    public chatClient: ChatClient | null = null;
+    private pubsubClient: PubSub | null = null;
 
     constructor() {
         let settings = espresso.store.get('twitch') as Settings | undefined;
@@ -37,6 +44,35 @@ class Twitch {
         this.version = settings.version;
         this.main = settings.main;
         this.bot = settings.bot;
+
+        this.connectBot();
+        this.connectPubSub();
+
+        espresso.events.listen<UserChangeEvent>('twitch:user-updated', ({ type, user }) => {
+            if (type === 'main') {
+                // Disconnect and reconnect pubsub client
+                this.disconnectPubSub(true);
+            }
+            // Disconnect and attempt to reconnect the chat bot
+            this.disconnectBot(true);
+        });
+
+        espresso.events.listen<UserType>('twitch:user-invalidated', (type) => {
+            if (type === 'main') {
+                this.disconnectPubSub();
+            }
+            this.disconnectBot();
+        });
+
+        espresso.events.listen('espresso:power-suspend', () => {
+            this.disconnectBot();
+            this.disconnectPubSub();
+        });
+
+        espresso.events.listen('espresso:power-resume', () => {
+            this.connectBot();
+            this.connectPubSub();
+        });
     }
 
     private setDefaultSettings() {
@@ -72,6 +108,7 @@ class Twitch {
 
                 this[type] = user;
                 espresso.store.set(`twitch.${type}`, user);
+                espresso.events.dispatch('twitch:user-updated', { type, user });
                 return true;
             } else if (json.data[0] && dryRun === true) {
                 return true;
@@ -109,6 +146,7 @@ class Twitch {
                 this[type] = null;
                 espresso.store.set(`twitch.${type}`, null);
                 espresso.tokens.delete(user.token);
+                espresso.events.dispatch('twitch:user-invalidated', type);
                 return true;
             }
             return false;
@@ -116,6 +154,42 @@ class Twitch {
             console.log(e);
             return false;
         }
+    }
+
+    private connectBot() {
+        if (this.main !== null && this.bot !== null) {
+            this.chatClient = new ChatClient(this.bot.username, this.bot.token, this.main.username);
+        }
+    }
+
+    private disconnectBot(reconnect: boolean = false) {
+        if (this.chatClient !== null) {
+            this.chatClient.client
+                .disconnect()
+                .then(() => {
+                    this.chatClient = null;
+                    if (reconnect) this.connectBot();
+                })
+                .catch((e) => {
+                    console.log(e);
+                });
+        } else if (this.chatClient === null && reconnect) {
+            this.connectBot();
+        }
+    }
+
+    private connectPubSub() {
+        if (this.pubsubClient !== null) return;
+        else if (this.main) this.pubsubClient = new PubSub(this.main.token, this.main.id);
+    }
+
+    private disconnectPubSub(reconnect: boolean = false) {
+        if (this.pubsubClient !== null) {
+            this.pubsubClient.disconnect();
+            this.pubsubClient = null;
+        }
+
+        if (reconnect) this.connectPubSub();
     }
 }
 

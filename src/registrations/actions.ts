@@ -1,7 +1,7 @@
 import { trimUsername } from '../utilities';
 import { Espresso } from '../../../../espresso/declarations/core/espresso';
 import { Input } from '../../../../espresso/declarations/typings/inputs';
-import Bot from '../bot';
+import Twitch from '../twitch';
 import TwitchAPIFetch from '../api';
 
 declare const espresso: Espresso;
@@ -35,8 +35,10 @@ espresso.actions.register({
     settings: twitchSendMessageSettings,
     // @ts-ignore
     run: async (triggerSettings, actionSettings, triggerData) => {
-        if (Bot.client && Bot.client.readyState() === 'OPEN' && Bot.channel)
-            Bot.client.say(Bot.channel, espresso.parseVariables(actionSettings.message, triggerData)).catch((e) => console.log);
+        if (Twitch.chatClient !== null && Twitch.chatClient.client.readyState() === 'OPEN')
+            Twitch.chatClient.client
+                .say(Twitch.chatClient.channel, espresso.parseVariables(actionSettings.message, triggerData))
+                .catch((e) => console.log);
     },
 });
 
@@ -77,8 +79,8 @@ espresso.actions.register({
     settings: banUserSettings,
     // @ts-ignore
     run: async (triggerSettings, actionSettings: TwitchBanUserAction) => {
-        if (Bot.client && Bot.client.readyState() !== 'OPEN' && Bot.channel)
-            Bot.client.ban(Bot.channel, trimUsername(actionSettings.user)).catch((e) => console.log);
+        if (Twitch.chatClient !== null && Twitch.chatClient.client.readyState() === 'OPEN')
+            Twitch.chatClient.client.ban(Twitch.chatClient.channel, trimUsername(actionSettings.user)).catch((e) => console.log);
     },
 });
 
@@ -111,8 +113,8 @@ espresso.actions.register({
     settings: unbanUserSettings,
     // @ts-ignore
     run: async (triggerSettings, actionSettings: TwitchBanUserAction) => {
-        if (Bot.client && Bot.client.readyState() !== 'OPEN' && Bot.channel)
-            Bot.client.unban(Bot.channel, trimUsername(actionSettings.user)).catch((e) => console.log);
+        if (Twitch.chatClient !== null && Twitch.chatClient.client.readyState() === 'OPEN')
+            Twitch.chatClient.client.unban(Twitch.chatClient.channel, trimUsername(actionSettings.user)).catch((e) => console.log);
     },
 });
 
@@ -180,8 +182,10 @@ espresso.actions.register({
                 unit = 3600;
                 break;
         }
-        if (Bot.client && Bot.client.readyState() !== 'OPEN' && Bot.channel)
-            Bot.client.timeout(Bot.channel, trimUsername(actionSettings.user), actionSettings.duration * unit).catch((e) => console.log);
+        if (Twitch.chatClient !== null && Twitch.chatClient.client.readyState() !== 'OPEN')
+            Twitch.chatClient.client
+                .timeout(Twitch.chatClient.channel, trimUsername(actionSettings.user), actionSettings.duration * unit)
+                .catch((e) => console.log);
     },
 });
 
