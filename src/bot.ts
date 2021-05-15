@@ -7,8 +7,6 @@ class EspressoTwitchBot {
     public client: tmi.Client;
 
     constructor(public username: string, private token: string, public channel: string) {
-        console.log('New bot!');
-
         this.client = new tmi.Client({
             // options: { debug: true, messagesLogLevel: 'warn' },
             connection: {
@@ -25,9 +23,14 @@ class EspressoTwitchBot {
         // Set on message listener
         this.client.on('message', this.onMessage.bind(this));
 
-        this.client.connect().catch((e) => {
-            console.log(e);
-        });
+        this.client
+            .connect()
+            .then(() => {
+                espresso.events.dispatch('twitch:chat-bot-connected');
+            })
+            .catch((e) => {
+                console.log(e);
+            });
     }
 
     private onMessage(channel: string, tags: tmi.ChatUserstate, message: string, self: boolean) {
@@ -43,7 +46,7 @@ class EspressoTwitchBot {
             case 'chat':
                 const messageData = {
                     message,
-                    username: tags.username,
+                    username: tags['display-name'],
                 };
 
                 exclude = [...exclude, ...espresso.triggers.trigger('twitch-chat-message', messageData, exclude)];

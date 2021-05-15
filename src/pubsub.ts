@@ -5,7 +5,7 @@ import { Espresso } from '../../../espresso/declarations/core/espresso';
 declare const espresso: Espresso;
 
 class TwitchPubSub {
-    private ws = new WebSocket('wss://pubsub-edge.twitch.tv');
+    public ws = new WebSocket('wss://pubsub-edge.twitch.tv');
     private heartbeatInterval = 1000 * 60; //ms between PING's
     // private reconnectInterval = 1000 * 3; //ms to wait before reconnect
     private heartbeatHandle?: NodeJS.Timeout;
@@ -31,6 +31,8 @@ class TwitchPubSub {
             this.heartbeat();
         }, this.heartbeatInterval);
 
+        espresso.events.dispatch('twitch:pubsub-connected');
+
         // this.listen(`channel-bits-events-v2.${this.channelId}`);
         // this.listen(`channel-bits-badge-unlocks.${this.channelId}`);
         this.listen(`channel-points-channel-v1.${this.channelId}`);
@@ -40,13 +42,12 @@ class TwitchPubSub {
     }
 
     private onClose(event: any) {
-        console.log('Twitch PubSub connection closed.');
+        espresso.events.dispatch('twitch:pubsub-disconnected');
         if (this.heartbeatHandle) clearInterval(this.heartbeatHandle);
     }
 
     private onMessage(e: any) {
         const data = JSON.parse(e.data) as PubSubMessage;
-        console.log(data);
         if (data.type === 'MESSAGE') {
             const message = JSON.parse(data.data.message) as ParsedPubSubEvent;
 

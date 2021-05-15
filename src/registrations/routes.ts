@@ -159,10 +159,15 @@ espresso.server.register({
     method: 'get',
     response: async (req, res) => {
         try {
+            // Check validity of accounts
             const main = await Twitch.validateUser('main');
             const bot = await Twitch.validateUser('bot');
 
-            res.json({ main, bot });
+            // Check connection status of chat bot and pubsub
+            const chat = Twitch.chatClient !== null && Twitch.chatClient.client.readyState() === 'OPEN';
+            const pubsub = Twitch.pubsubClient !== null && Twitch.pubsubClient.ws.readyState === 1;
+
+            res.json({ main, bot, chat, pubsub });
         } catch (e) {
             res.status(500);
             res.send(e);

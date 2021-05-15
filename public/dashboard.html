@@ -19,7 +19,7 @@
         display: flex;
         justify-content: center;
         align-items: center;
-        height: 100vh;
+        min-height: 100vh;
         width: 100%;
       }
 
@@ -31,18 +31,36 @@
         width: 50%;
       }
 
+      .accounts {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
       .account {
         display: flex;
+        flex-direction: column;
         justify-content: space-between;
         align-items: center;
         border: solid 1px white;
         border-radius: 4px;
         width: 100%;
-        padding: 0 20px;
+        margin: auto 10px;
+        padding: 20px;
       }
 
-      .account:not(:last-child) {
-        margin-bottom: 20px;
+      .account-circle {
+        border-radius: 100%;
+        background-color: #4d4d4d;
+        width: 100px;
+        height: 100px;
+
+        background-position: center;
+        background-size: cover;
+      }
+
+      .action {
+        margin: 16px auto;
       }
     </style>
   </head>
@@ -58,25 +76,150 @@
         window so it doens't log you in as your main account.
       </p>
 
-      <div id="main-account" class="account">
-        <p>Main account</p>
-        <a href="#" id="main-account-action" data-account="main">Loading...</a>
+      <div id="connections">
+        <p>Twitch chat: <span id="chat-connection-status"></span></p>
+        <p>
+          Twitch events:
+          <span id="events-connection-status"></span>
+        </p>
       </div>
 
-      <div id="bot-account" class="account">
-        <p>Bot account</p>
-        <a href="#" id="bot-account-action" data-account="bot">Loading...</a>
+      <div class="accounts">
+        <div id="main-account" class="account">
+          <p>Main account</p>
+
+          <div id="main-circle" class="account-circle"></div>
+
+          <a
+            href="#"
+            id="main-account-action"
+            class="action"
+            data-account="main"
+            >Loading...</a
+          >
+        </div>
+
+        <div id="bot-account" class="account">
+          <p>Bot account</p>
+
+          <div id="bot-circle" class="account-circle"></div>
+
+          <a href="#" id="bot-account-action" class="action" data-account="bot"
+            >Loading...</a
+          >
+        </div>
       </div>
     </div>
 
     <script>
+      const mainAction = document.getElementById("main-account-action");
+      const mainCircle = document.getElementById("main-circle");
+
+      const botAction = document.getElementById("bot-account-action");
+      const botCircle = document.getElementById("bot-circle");
+
+      const clientId = "kybgbb011cg2tnx6z1tjckxdutfkmu";
+      const redirectUrl = `http://localhost:23167/twitch/auth`;
+      const authUrl = `https://id.twitch.tv/oauth2/authorize?client_id=${clientId}&response_type=token`;
+
+      const userScopes = [
+        "bits:read",
+        "channel:manage:broadcast",
+        "channel:manage:redemptions",
+        "channel:read:hype_train",
+        "channel:read:redemptions",
+        "channel:read:subscriptions",
+        "channel:moderate",
+        "moderation:read",
+        "user:edit",
+        "user:read:broadcast",
+        "user:read:follows",
+      ];
+
+      const botScopes = ["channel:moderate", "chat:edit", "chat:read"];
+
+      const getAuthURL = (type) => {
+        switch (type) {
+          case "main":
+            return `${authUrl}&redirect_uri=${
+              redirectUrl + "/main"
+            }&scope=${userScopes.join("%20")}`;
+
+          case "bot":
+            return `${authUrl}&redirect_uri=${
+              redirectUrl + "/bot"
+            }&scope=${botScopes.join("%20")}`;
+        }
+      };
+
+      const disconnectUser = (type) => {
+        const action = type === "main" ? mainAction : botAction;
+        const circle = type === "main" ? mainCircle : botCircle;
+        const authUrl = getAuthURL(type);
+        action.innerHTML = `Connect ${type} account`;
+        action.setAttribute("data-connected", "false");
+        action.setAttribute("href", authUrl);
+        circle.setAttribute("style", "");
+      };
+
+      const connectUser = (type, image) => {
+        const action = type === "main" ? mainAction : botAction;
+        const circle = type === "main" ? mainCircle : botCircle;
+
+        action.innerHTML = `Disconnect ${type} account`;
+        action.setAttribute("data-connected", "true");
+        circle.setAttribute("style", `background-image: url(${image})`);
+      };
+
+      const chatConnection = document.getElementById("chat-connection-status");
+      const eventsConnection = document.getElementById(
+        "events-connection-status"
+      );
+      const webSocket = new WebSocket("ws://localhost:23167");
+
+      webSocket.onmessage = (e) => {
+        const json = JSON.parse(e.data);
+
+        switch (json.event) {
+          case "ping":
+            webSocket.send("pong");
+            break;
+
+          case "twitch:chat-bot-connected":
+            chatConnection.innerHTML = "Connected";
+            break;
+
+          case "twitch:chat-bot-disconnected":
+            chatConnection.innerHTML = "Not connected";
+            break;
+
+          case "twitch:pubsub-connected":
+            eventsConnection.innerHTML = "Connected";
+            break;
+
+          case "twitch:pubsub-disconnected":
+            eventsConnection.innerHTML = "Not connected";
+            break;
+
+          case "twitch:user-invalidated":
+            console.log("hereee?");
+            switch (json.data) {
+              case "main":
+                disconnectUser("main");
+                break;
+
+              case "bot":
+                disconnectUser("bot");
+                break;
+            }
+            break;
+        }
+      };
+
       const onClick = (e) => {
         const target = e.target;
         const account = target.getAttribute("data-account");
         const connected = target.getAttribute("data-connected") === "true";
-
-        console.log(connected);
-        console.log(account);
 
         if (!connected) return;
 
@@ -95,8 +238,6 @@
             console.log(e);
           });
       };
-      const mainAction = document.getElementById("main-account-action");
-      const botAction = document.getElementById("bot-account-action");
 
       mainAction.addEventListener("click", onClick);
       botAction.addEventListener("click", onClick);
@@ -109,59 +250,26 @@
 
           const json = await res.json();
 
-          const clientId = "kybgbb011cg2tnx6z1tjckxdutfkmu";
-          const redirectUrl = `http://localhost:23167/twitch/auth`;
-          const authUrl = `https://id.twitch.tv/oauth2/authorize?client_id=${clientId}&response_type=token`;
-
-          const userScopes = [
-            "bits:read",
-            "channel:manage:broadcast",
-            "channel:manage:redemptions",
-            "channel:read:hype_train",
-            "channel:read:redemptions",
-            "channel:read:subscriptions",
-            "channel:moderate",
-            "moderation:read",
-            "user:edit",
-            "user:read:broadcast",
-            "user:read:follows",
-          ];
-
-          const botScopes = ["channel:moderate", "chat:edit", "chat:read"];
-
-          const mainAction = document.getElementById("main-account-action");
-          const botAction = document.getElementById("bot-account-action");
-
           mainAction.addEventListener("click", onClick);
           botAction.addEventListener("click", onClick);
 
           if (json.main) {
-            mainAction.innerHTML = "Disconnect main account";
-            mainAction.setAttribute("data-connected", "true");
+            connectUser("main", json.main.profile_image_url);
           } else {
-            mainAction.innerHTML = "Connect main account";
-            mainAction.setAttribute("data-connected", "false");
-            mainAction.setAttribute(
-              "href",
-              `${authUrl}&redirect_uri=${
-                redirectUrl + "/main"
-              }&scope=${userScopes.join("%20")}`
-            );
+            disconnectUser("main");
           }
 
           if (json.bot) {
-            botAction.innerHTML = "Disconnect bot account";
-            botAction.setAttribute("data-connected", "true");
+            connectUser("bot", json.bot.profile_image_url);
           } else {
-            botAction.innerHTML = "Connect bot account";
-            botAction.setAttribute("data-connected", "false");
-            botAction.setAttribute(
-              "href",
-              `${authUrl}&redirect_uri=${
-                redirectUrl + "/bot"
-              }&scope=${botScopes.join("%20")}`
-            );
+            disconnectUser("bot");
           }
+
+          if (json.chat === true) chatConnection.innerHTML = "Connected";
+          else chatConnection.innerHTML = "Not connected";
+
+          if (json.pubsub === true) eventsConnection.innerHTML = "Connected";
+          else eventsConnection.innerHTML = "Not connected";
         } catch (e) {
           throw e;
         }

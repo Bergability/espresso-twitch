@@ -4,6 +4,7 @@ import TwitchAPIFetch from './api';
 import { Espresso } from '../../../espresso/declarations/core/espresso';
 import ChatClient from './bot';
 import PubSub from './pubsub';
+import { TwitchUser } from './typings/api';
 
 declare const espresso: Espresso;
 
@@ -31,7 +32,7 @@ class Twitch {
     private main: UserData | null;
     private bot: UserData | null;
     public chatClient: ChatClient | null = null;
-    private pubsubClient: PubSub | null = null;
+    public pubsubClient: PubSub | null = null;
 
     constructor() {
         let settings = espresso.store.get('twitch') as Settings | undefined;
@@ -49,12 +50,23 @@ class Twitch {
         this.connectPubSub();
 
         espresso.events.listen<UserChangeEvent>('twitch:user-updated', ({ type, user }) => {
-            if (type === 'main') {
-                // Disconnect and reconnect pubsub client
-                this.disconnectPubSub(true);
+            switch (type) {
+                case 'main':
+                    // Disconnect and reconnect pubsub client
+                    this.disconnectPubSub(true);
+                    break;
+
+                case 'bot':
+                    break;
             }
+
             // Disconnect and attempt to reconnect the chat bot
             this.disconnectBot(true);
+
+            if (this.main && this.bot) {
+                const notification = espresso.notifications.getAll().find((n) => n.slug === 'twitch:link-account');
+                if (notification) espresso.notifications.dismiss(notification.id);
+            }
         });
 
         espresso.events.listen<UserType>('twitch:user-invalidated', (type) => {
@@ -62,6 +74,19 @@ class Twitch {
                 this.disconnectPubSub();
             }
             this.disconnectBot();
+
+            const notifications = espresso.notifications.getAll();
+
+            if (!notifications.find((n) => n.slug === 'twitch:link-account')) {
+                espresso.notifications.add({
+                    title: 'Connect your Twitch account',
+                    message:
+                        'Connect your Twitch account to connect to chat and recieve events. Without both accounts linked you will not be able to use the actions and triggers provided by the Twitch plugin.',
+                    dismissible: false,
+                    slug: 'twitch:link-account',
+                    actions: [{ text: 'Open Twitch settings', link: 'http://localhost:23167/twitch' }],
+                });
+            }
         });
 
         espresso.events.listen('espresso:power-suspend', () => {
@@ -85,7 +110,7 @@ class Twitch {
         return defaultSettings;
     }
 
-    public async updateUser(type: UserType, token: string, dryRun: boolean = false): Promise<boolean> {
+    public async updateUser(type: UserType, token: string, dryRun: boolean = false): Promise<false | TwitchUser> {
         try {
             const json = await TwitchAPIFetch('https://api.twitch.tv/helix/users', 'get', undefined, token);
             if (json.data[0] && dryRun === false) {
@@ -109,9 +134,9 @@ class Twitch {
                 this[type] = user;
                 espresso.store.set(`twitch.${type}`, user);
                 espresso.events.dispatch('twitch:user-updated', { type, user });
-                return true;
+                return json[0] as TwitchUser;
             } else if (json.data[0] && dryRun === true) {
-                return true;
+                return json.data[0] as TwitchUser;
             }
             return false;
         } catch (e) {
@@ -120,7 +145,7 @@ class Twitch {
         }
     }
 
-    public async validateUser(type: UserType): Promise<boolean> {
+    public async validateUser(type: UserType): Promise<false | TwitchUser> {
         const user = this[type];
         if (user === null) return false;
 
@@ -168,6 +193,7 @@ class Twitch {
                 .disconnect()
                 .then(() => {
                     this.chatClient = null;
+                    espresso.events.dispatch('twitch:chat-bot-disconnected');
                     if (reconnect) this.connectBot();
                 })
                 .catch((e) => {
