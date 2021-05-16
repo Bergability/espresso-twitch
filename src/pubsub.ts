@@ -33,11 +33,12 @@ class TwitchPubSub {
 
         espresso.events.dispatch('twitch:pubsub-connected');
 
-        // this.listen(`channel-bits-events-v2.${this.channelId}`);
-        // this.listen(`channel-bits-badge-unlocks.${this.channelId}`);
+        this.listen(`channel-bits-events-v2.${this.channelId}`);
         this.listen(`channel-points-channel-v1.${this.channelId}`);
+        this.listen(`chat_moderator_actions.${this.channelId}.${this.channelId}`);
+
+        // this.listen(`channel-bits-badge-unlocks.${this.channelId}`);
         // this.listen(`channel-subscribe-events-v1.${this.channelId}`);
-        // this.listen(`chat_moderator_actions.*.${this.channelId}`);
         // this.listen(`channel.follow.${this.channelId}`);
     }
 
@@ -51,10 +52,11 @@ class TwitchPubSub {
         if (data.type === 'MESSAGE') {
             const message = JSON.parse(data.data.message) as ParsedPubSubEvent;
 
+            console.log(message.type);
+            console.log(message);
+
             switch (message.type) {
                 case 'reward-redeemed':
-                    console.log('reward redmeededddd');
-
                     espresso.triggers.trigger('twitch-custom-reward', {
                         username: message.data.redemption.user.display_name,
                         redemption_id: message.data.redemption.id,
@@ -63,6 +65,27 @@ class TwitchPubSub {
                     break;
 
                 case 'moderation_action':
+                    switch (message.data.moderation_action) {
+                        case 'ban':
+                            espresso.triggers.trigger('twitch-chat-user-banned', {
+                                username: message.data.moderation_action[0],
+                                reason: message.data.moderation_action[1] || 'No reason provided',
+                                moderator: message.data.created_by || message.data.from_automod ? 'Automod' : '',
+                            });
+                            break;
+
+                        case 'unban':
+                            espresso.triggers.trigger('twitch-chat-user-unbanned', {
+                                username: message.data.moderation_action[0],
+                                moderator: message.data.created_by || message.data.from_automod ? 'Automod' : '',
+                            });
+                            break;
+
+                        default:
+                            console.log(message);
+                            break;
+                    }
+
                     break;
             }
         }

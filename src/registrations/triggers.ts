@@ -14,7 +14,7 @@ interface ChatMessageData {
 }
 
 espresso.triggers.register({
-    slug: 'twitch-chat-message',
+    slug: 'twitch:chat-message',
     name: 'Chat message',
     provider: 'Twitch',
     catigory: 'Chat',
@@ -42,7 +42,7 @@ const TwtichChatMessageContainsSettings: Input<TwtichChatMessageContains>[] = [
  *
  */
 espresso.triggers.register({
-    slug: 'twitch-chat-message-contains',
+    slug: 'twitch:chat-message-contains',
     name: 'Chat message contains',
     provider: 'Twitch',
     catigory: 'Chat',
@@ -144,7 +144,7 @@ const ChatCommandSettings: Input<ChatCommand, CommandVariable>[] = [
 ];
 
 espresso.triggers.register({
-    slug: 'twitch-chat-command',
+    slug: 'twitch:chat-command',
     name: 'Twitch chat command',
     provider: 'Twitch',
     catigory: 'Chat',
@@ -211,7 +211,7 @@ const customRewardSettings: Input<CustomReward>[] = [
 ];
 
 espresso.triggers.register({
-    slug: 'twitch-custom-reward',
+    slug: 'twitch:custom-reward',
     name: 'Custom reward',
     provider: 'Twitch',
     catigory: 'Rewards',
@@ -226,4 +226,39 @@ espresso.triggers.register({
     predicate: (data: any, settings: CustomReward) => {
         return settings.reward === data.reward_id;
     },
+});
+
+/**
+ *
+ * Uesr banned
+ *
+ */
+espresso.triggers.register({
+    slug: 'twitch:chat-user-banned',
+    name: 'User banned',
+    provider: 'Twitch',
+    catigory: 'Chat',
+    version: '1.0.0',
+    variables: [
+        { name: 'username', description: 'The username of the user who was banned.' },
+        { name: 'reason', description: 'The reason the user was banned. If no reason is provided this will be set to "No reason provided"' },
+        { name: 'moderator', description: 'The moderator who banned the user.' },
+    ],
+});
+
+/**
+ *
+ * Uesr unbanned
+ *
+ */
+espresso.triggers.register({
+    slug: 'twitch:chat-user-unbanned',
+    name: 'User unbanned',
+    provider: 'Twitch',
+    catigory: 'Chat',
+    version: '1.0.0',
+    variables: [
+        { name: 'username', description: 'The username of the user who was unbanned.' },
+        { name: 'moderator', description: 'The moderator who unbanned the user.' },
+    ],
 });

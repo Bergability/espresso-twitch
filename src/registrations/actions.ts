@@ -26,7 +26,7 @@ const twitchSendMessageSettings: Input<TwitchSendChatSettings>[] = [
 ];
 
 espresso.actions.register({
-    slug: 'twitch-send-chat-message',
+    slug: 'twitch:send-chat-message',
     name: 'Send chat message',
     catigory: 'Chat',
     provider: 'Twitch',
@@ -70,7 +70,7 @@ const banUserSettings: Input<TwitchBanUserAction>[] = [
 ];
 
 espresso.actions.register({
-    slug: 'twitch-ban-user',
+    slug: 'twitch:ban-user',
     name: 'Ban user',
     catigory: 'Chat',
     provider: 'Twitch',
@@ -104,7 +104,7 @@ const unbanUserSettings: Input<TwitchUnbanUserAction>[] = [
 ];
 
 espresso.actions.register({
-    slug: 'twitch-unban-user',
+    slug: 'twitch:unban-user',
     name: 'Unban user',
     catigory: 'Chat',
     provider: 'Twitch',
@@ -158,7 +158,7 @@ const timeoutUserSettings: Input<TwitchTimeoutUserAction>[] = [
 ];
 
 espresso.actions.register({
-    slug: 'twitch-timeout-user',
+    slug: 'twitch:timeout-user',
     name: 'Timeout user',
     catigory: 'Chat',
     provider: 'Twitch',
@@ -224,7 +224,7 @@ const acceptRewardSettings: Input<AcceptRejectReward>[] = [
 ];
 
 espresso.actions.register({
-    slug: 'twitch-fulfill-custom-reward',
+    slug: 'twitch:fulfill-custom-reward',
     name: 'Fulfill custom reward',
     provider: 'Twitch',
     catigory: 'Rewards',
@@ -276,7 +276,7 @@ const rejectRewardSettings: Input<AcceptRejectReward>[] = [
 ];
 
 espresso.actions.register({
-    slug: 'twitch-reject-custom-reward',
+    slug: 'twitch:reject-custom-reward',
     name: 'Reject custom reward',
     provider: 'Twitch',
     catigory: 'Rewards',

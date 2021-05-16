@@ -20,7 +20,7 @@ class EspressoTwitchBot {
             channels: [this.channel],
         });
 
-        // Set on message listener
+        // Set event listeners
         this.client.on('message', this.onMessage.bind(this));
 
         this.client

@@ -74,8 +74,8 @@ export interface ParsedRewardRedeemed {
  */
 export interface PubSubModerationEvent {
     type: 'chat_login_moderation';
-    moderation_action: string[];
-    args: string[];
+    moderation_action: 'ban' | 'unban' | string;
+    args: [string, string];
     created_by: string;
     created_by_user_id: string;
     created_at: string;
