@@ -1,5 +1,5 @@
 export interface PubSubMessage {
-    type: 'MESSAGE';
+    type: 'MESSAGE' | 'PONG' | 'RECONNECT';
     data: {
         topic: string;
         message: string;
@@ -12,6 +12,7 @@ export interface PubSubMessage {
  *
  */
 export interface PubSubRewardRedemtion {
+    topic: string;
     timestamp: string;
     redemption: {
         id: string;
@@ -74,8 +75,9 @@ export interface ParsedRewardRedeemed {
  */
 export interface PubSubModerationEvent {
     type: 'chat_login_moderation';
-    moderation_action: 'ban' | 'unban' | string;
-    args: [string, string];
+    topic: string;
+    moderation_action: 'ban' | 'unban' | 'timeout' | string;
+    args: [string, string, string];
     created_by: string;
     created_by_user_id: string;
     created_at: string;
@@ -90,4 +92,99 @@ export interface ParsedModerationEvent {
     data: PubSubModerationEvent;
 }
 
-export type ParsedPubSubEvent = ParsedRewardRedeemed | ParsedModerationEvent;
+/**
+ *
+ * Bits event
+ *
+ */
+export interface BitsEventData {
+    topic: string;
+    user_name: string;
+    channel_name: string;
+    user_id: string;
+    channel_id: string;
+    time: string;
+    chat_message: string;
+    bits_used: number;
+    total_bits_used: number;
+    is_anonymous: boolean;
+    context: 'cheer';
+    badge_entitlement: null;
+}
+
+export interface ParsedBitsEvent {
+    version: string;
+    message_type: 'bits_event';
+    message_id: string;
+    data: BitsEventData;
+}
+
+/**
+ *
+ * Sub event
+ *
+ */
+export interface TwitchEmote {
+    start: number;
+    end: number;
+    id: number;
+}
+export interface SubMessage {
+    message: string;
+    emotes: TwitchEmote[] | null;
+}
+
+export interface ParsedNormalSubEvent {
+    user_name: string;
+    display_name: string;
+    channel_name: string;
+    user_id: string;
+    channel_id: string;
+    time: string;
+    sub_plan: 'Prime' | '1000' | '2000' | '3000';
+    sub_plan_name: string;
+    cumulative_months: number;
+    streak_months: number;
+    context: 'sub' | 'resub';
+    is_gift: false;
+    sub_message: SubMessage;
+}
+
+export interface ParsedGiftSubEvent {
+    user_name: string;
+    display_name: string;
+    channel_name: string;
+    user_id: string;
+    channel_id: string;
+    time: string;
+    sub_plan: '1000' | '2000' | '3000';
+    sub_plan_name: string;
+    months: number;
+    context: 'subgift' | 'resubgift';
+    is_gift: true;
+    sub_message: SubMessage;
+    recipient_id: string;
+    recipient_user_name: string;
+    recipient_display_name: string;
+    multi_month_duration?: number;
+}
+
+export interface ParsedAnonGiftSubEvent {
+    channel_name: string;
+    channel_id: string;
+    time: string;
+    sub_plan: '1000' | '2000' | '3000';
+    sub_plan_name: string;
+    months: number;
+    context: 'anonsubgift' | 'anonresubgift';
+    is_gift: true;
+    sub_message: SubMessage;
+    recipient_id: string;
+    recipient_user_name: string;
+    recipient_display_name: string;
+    multi_month_duration?: number;
+}
+
+export type ParsedSubEvent = ParsedNormalSubEvent | ParsedGiftSubEvent | ParsedAnonGiftSubEvent;
+
+export type ParsedPubSubEvent = ParsedRewardRedeemed | ParsedModerationEvent | ParsedBitsEvent | ParsedSubEvent;

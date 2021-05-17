@@ -84,7 +84,7 @@ class Twitch {
                         'Connect your Twitch account to connect to chat and recieve events. Without both accounts linked you will not be able to use the actions and triggers provided by the Twitch plugin.',
                     dismissible: false,
                     slug: 'twitch:link-account',
-                    actions: [{ text: 'Open Twitch settings', link: 'http://localhost:23167/twitch' }],
+                    actions: [{ text: 'Open Twitch settings', link: `http://localhost:${espresso.store.get('port')}/twitch` }],
                 });
             }
         });
@@ -97,6 +97,11 @@ class Twitch {
         espresso.events.listen('espresso:power-resume', () => {
             this.connectBot();
             this.connectPubSub();
+        });
+
+        // Twitch PubSub server restart
+        espresso.events.listen('twitch:pubsub-server-reconnect', () => {
+            this.disconnectPubSub(true);
         });
     }
 

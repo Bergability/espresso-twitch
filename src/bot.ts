@@ -49,12 +49,12 @@ class EspressoTwitchBot {
                     username: tags['display-name'],
                 };
 
-                exclude = [...exclude, ...espresso.triggers.trigger('twitch-chat-message', messageData, exclude)];
-                exclude = [...exclude, ...espresso.triggers.trigger('twitch-chat-message-contains', messageData, exclude)];
+                exclude = [...exclude, ...espresso.triggers.trigger('twitch:chat-message', messageData, exclude)];
+                exclude = [...exclude, ...espresso.triggers.trigger('twitch:chat-message-contains', messageData, exclude)];
 
                 if (message.startsWith('!')) {
                     const aliase = message.split(' ')[0].substr(1);
-                    exclude = [...exclude, ...espresso.triggers.trigger('twitch-chat-command', { ...messageData, aliase }, exclude)];
+                    exclude = [...exclude, ...espresso.triggers.trigger('twitch:chat-command', { ...messageData, aliase }, exclude)];
                 }
                 break;
 
