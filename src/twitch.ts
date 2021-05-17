@@ -29,8 +29,8 @@ interface UserChangeEvent {
 
 class Twitch {
     public version: string;
-    private main: UserData | null;
-    private bot: UserData | null;
+    public main: UserData | null;
+    public bot: UserData | null;
     public chatClient: ChatClient | null = null;
     public pubsubClient: PubSub | null = null;
 

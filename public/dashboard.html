@@ -15,11 +15,11 @@
         background-color: #303030;
         color: white;
         font-family: "Roboto", sans-serif;
-        text-align: center;
+        /* text-align: center; */
         display: flex;
         justify-content: center;
         align-items: center;
-        min-height: 100vh;
+        /* min-height: 100vh; */
         width: 100%;
       }
 
@@ -62,13 +62,39 @@
       .action {
         margin: 16px auto;
       }
+
+      #custom-reward-wrapper {
+        border: solid 1px white;
+        border-radius: 4px;
+        padding: 20px;
+
+        width: calc(100% - 60px);
+        margin: 20px auto;
+      }
+
+      #custom-reward-wrapper label {
+        display: block;
+      }
+
+      fieldset {
+        border: none;
+        margin: 0;
+        padding: 0;
+        margin-bottom: 10px;
+      }
+
+      input[type="text"] {
+        width: 100%;
+      }
+
+      form {
+        margin-bottom: 20px;
+      }
     </style>
   </head>
   <body>
     <div class="wrapper">
-      <p style="font-weight: bold; font-size: 1.5em">
-        Welcome to Twitch for Espresso!
-      </p>
+      <h1>Welcome to Twitch for Espresso!</h1>
 
       <p style="margin-bottom: 50px">
         Use the links below to connect / disconnect your Twitch accounts. Note
@@ -109,9 +135,37 @@
           >
         </div>
       </div>
+
+      <div id="custom-reward-wrapper">
+        <h4>New custom reward</h4>
+        <p>
+          Espresso can only accept or deny a custom reward if it created the
+          reward. Use this tool to create new rewards via Espresso!
+        </p>
+        <form id="custom-reward-form">
+          <fieldset>
+            <label for="custom-reward-input">Custom reward name:</label>
+            <input
+              type="text"
+              id="custom-reward-input"
+              name="custom-reward-input"
+            />
+          </fieldset>
+          <input type="submit" value="Create custom reward" />
+        </form>
+
+        <a
+          href="https://dashboard.twitch.tv/viewer-rewards/channel-points/rewards"
+          target="_blank"
+          >Manage custom rewards</a
+        >
+      </div>
     </div>
 
     <script>
+      const rewardForm = document.getElementById("custom-reward-form");
+      const rewardInput = document.getElementById("custom-reward-input");
+
       const mainAction = document.getElementById("main-account-action");
       const mainCircle = document.getElementById("main-circle");
 
@@ -274,6 +328,35 @@
           throw e;
         }
       };
+
+      rewardForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const value = rewardInput.value;
+
+        // Exit if no value is found
+        if (!value) return;
+
+        fetch("/twitch/new-custom-reward", {
+          method: "post",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ name: value }),
+        })
+          .then((res) => {
+            if (res.status === 200) {
+              alert(
+                "New reward created, it is currently not enabled! You can update your reward settings on Twitch."
+              );
+              rewardInput.value = "";
+            } else alert("Error creating new reward.");
+          })
+          .catch((e) => {
+            console.log(e);
+            alert("Error creating new reward.");
+          });
+      });
+
       init();
     </script>
   </body>

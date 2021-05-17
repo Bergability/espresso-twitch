@@ -1,4 +1,5 @@
 import path from 'path';
+import { clientId } from 'src/tokens';
 import { Espresso } from '../../../../espresso/declarations/core/espresso';
 import TwitchAPIFetch from '../api';
 import Twitch from '../twitch';
@@ -7,37 +8,27 @@ declare const espresso: Espresso;
 
 espresso.server.register({
     path: '/twitch/new-custom-reward',
-    method: 'get',
+    method: 'post',
     response: (req, res) => {
-        // fetch(`https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=${bergsId}`, {
-        //     method: 'POST',
-        //     headers: {
-        //         'Client-Id': clientId,
-        //         Authorization: `Bearer ${bergsAccessToken}`,
-        //         'Content-Type': 'application/json',
-        //     },
-        //     body: JSON.stringify({ title: 'Bot reward', cost: 100 }),
-        // })
-        //     .then((r) => {
-        //         r.json()
-        //             .then(() => {
-        //                 res.send('New reward created!\n Check your rewards dashboard to edit the reward!');
-        //             })
-        //             .catch((e) => {
-        //                 console.log(e);
-        //             });
-        //     })
-        //     .catch((e) => {
-        //         console.log(e);
-        //     });
+        const { name } = req.body;
 
-        const pluginDirPath = espresso.plugins.getPath('twitch');
-        if (!pluginDirPath) {
-            res.send('error file not found');
+        if (!name || Twitch.main === null) {
+            res.status(500).send();
             return;
         }
 
-        res.sendFile(path.join(pluginDirPath, 'public', 'new-custom-reward.html'));
+        TwitchAPIFetch(`https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=${Twitch.main.id}`, 'POST', {
+            title: name,
+            cost: 100,
+            is_enabled: false,
+        })
+            .then((r) => {
+                res.send();
+            })
+            .catch((e) => {
+                console.log(e);
+                res.status(500).send(e);
+            });
     },
 });
 

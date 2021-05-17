@@ -15,7 +15,7 @@ const TwitchAPIFetch = async (url: string, method: string, body?: any, token?: s
             method,
             headers: {
                 'Client-Id': clientId,
-                Authorization: `Bearer ${token || espresso.store.get('twitch.main.token')}`,
+                Authorization: `Bearer ${token || espresso.tokens.get(espresso.store.get('twitch.main.token'))}`,
                 'Content-Type': 'application/json',
             },
         };
@@ -28,6 +28,7 @@ const TwitchAPIFetch = async (url: string, method: string, body?: any, token?: s
         return json;
     } catch (e) {
         console.log(e);
+        return e;
     }
 };
 
