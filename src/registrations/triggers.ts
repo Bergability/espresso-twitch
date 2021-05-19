@@ -83,8 +83,8 @@ interface ChatCommand {
     aliases: string[];
     limit: boolean;
     roles: string[];
-    useList: boolean;
-    list: string;
+    useLists: boolean;
+    lists: string[];
     useVariables: boolean;
     variables: CommandVariable[];
     requireLast: boolean;
@@ -129,7 +129,7 @@ const ChatCommandSettings: Input<ChatCommand, CommandVariable>[] = [
     },
     {
         type: 'toggle',
-        key: 'useList',
+        key: 'useLists',
         label: 'Allow usernames from a list to use this command?',
         default: false,
         conditions: [{ value: 'limit', operator: 'equal', comparison: true }],
@@ -137,13 +137,14 @@ const ChatCommandSettings: Input<ChatCommand, CommandVariable>[] = [
     {
         type: 'select',
         label: 'User list',
-        key: 'list',
+        key: 'lists',
+        multiple: true,
         options: 'espresso:lists',
-        default: '',
+        default: [],
         conditions: [
             [
                 { value: 'limit', operator: 'equal', comparison: true },
-                { value: 'useList', operator: 'equal', comparison: true },
+                { value: 'useLists', operator: 'equal', comparison: true },
             ],
         ],
     },
@@ -248,7 +249,7 @@ espresso.triggers.register({
     },
     predicate: (triggerData: ChatCommandTriggerData, settings: ChatCommand) => {
         const { aliase, badges, username } = triggerData;
-        const { limit, useList, list: listId, roles } = settings;
+        const { limit, useLists, lists, roles } = settings;
 
         // If the command aliase is not one of the set aliases DO NOT RUN!
         if (!settings.aliases.includes(aliase)) return false;
@@ -272,21 +273,29 @@ espresso.triggers.register({
             }
 
             // Check if the command uses a list of users
-            if (useList) {
+            if (useLists) {
                 const items = espresso.store.get('items') as Item[];
-                const list = items.find((i) => i.id === listId && i.type === 'list') as List;
-
-                // If we can't find the list we can't verify the user has access
-                if (!list) return false;
 
                 // This is the final check
-                const isInList = list.items.reduce<boolean>((acc, entry) => {
-                    // If the username is in the list return true
-                    if (entry.toLowerCase() === username.toLowerCase()) return true;
+                const isInLists = lists.reduce<boolean>((acc, listId) => {
+                    // Find the curren list
+                    const list = items.find((i) => i.id === listId && i.type === 'list') as List;
+
+                    // If we can't find the list we can't verify the user has access
+                    if (!list) return acc;
+
+                    const isInCurrentList = list.items.reduce<boolean>((acc, entry) => {
+                        // If the username is in the list return true
+                        if (entry.toLowerCase() === username.toLowerCase()) return true;
+                        return acc;
+                    }, false);
+
+                    if (isInCurrentList) return true;
+
                     return acc;
                 }, false);
 
-                if (isInList) return true;
+                if (isInLists) return true;
             }
 
             // Deny access to the command by default
