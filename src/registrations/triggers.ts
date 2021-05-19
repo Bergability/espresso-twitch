@@ -259,11 +259,6 @@ espresso.triggers.register({
          * default to returning `false`.
          */
         if (limit) {
-            console.log('in limit');
-
-            console.log(roles);
-            console.log(badges);
-
             // If roles are selected check those first
             if (Array.isArray(roles) && roles.length > 0) {
                 // Loop over each role and see if the user has at least one
@@ -271,8 +266,6 @@ espresso.triggers.register({
                     if (badges[role] !== undefined) return true;
                     return acc;
                 }, false);
-
-                console.log(`Has role: ${hasRole}`);
 
                 // If the user has at least one role they can run the command!
                 if (hasRole) return true;
@@ -292,8 +285,6 @@ espresso.triggers.register({
                     if (entry.toLowerCase() === username.toLowerCase()) return true;
                     return acc;
                 }, false);
-
-                console.log(`In list: ${isInList}`);
 
                 if (isInList) return true;
             }
