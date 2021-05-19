@@ -33,6 +33,7 @@ class Twitch {
     public bot: UserData | null;
     public chatClient: ChatClient | null = null;
     public pubsubClient: PubSub | null = null;
+    private interval: NodeJS.Timeout | null = null;
 
     constructor() {
         let settings = espresso.store.get('twitch') as Settings | undefined;
@@ -92,17 +93,28 @@ class Twitch {
         espresso.events.listen('espresso:power-suspend', () => {
             this.disconnectBot();
             this.disconnectPubSub();
+            if (this.interval !== null) clearTimeout(this.interval);
         });
 
         espresso.events.listen('espresso:power-resume', () => {
             this.connectBot();
             this.connectPubSub();
+
+            this.interval = setInterval(() => {
+                this.validateUsers();
+            }, 10 * 60 * 1000);
         });
 
         // Twitch PubSub server restart
         espresso.events.listen('twitch:pubsub-server-reconnect', () => {
             this.disconnectPubSub(true);
         });
+
+        // Validate our users every 15min
+        this.validateUsers();
+        this.interval = setInterval(() => {
+            this.validateUsers();
+        }, 10 * 60 * 1000);
     }
 
     private setDefaultSettings() {
@@ -117,7 +129,11 @@ class Twitch {
 
     public async updateUser(type: UserType, token: string, dryRun: boolean = false): Promise<false | TwitchUser> {
         try {
-            const json = await TwitchAPIFetch('https://api.twitch.tv/helix/users', 'get', undefined, token);
+            const res = await TwitchAPIFetch('https://api.twitch.tv/helix/users', 'get', undefined, token);
+
+            if (!res.ok) return false;
+
+            const json = await res.json();
             if (json.data[0] && dryRun === false) {
                 const userData = espresso.store.get(`twitch.${type}`) as null | UserData;
                 const username = json.data[0].display_name;
@@ -172,18 +188,35 @@ class Twitch {
 
         try {
             const res = await fetch(`https://id.twitch.tv/oauth2/revoke?client_id=${clientId}&token=${token}`, { method: 'post' });
-            if (res.status === 200) {
-                this[type] = null;
-                espresso.store.set(`twitch.${type}`, null);
-                espresso.tokens.delete(user.token);
-                espresso.events.dispatch('twitch:user-invalidated', type);
-                return true;
-            }
-            return false;
+            this[type] = null;
+            espresso.store.set(`twitch.${type}`, null);
+            espresso.tokens.delete(user.token);
+            espresso.events.dispatch('twitch:user-invalidated', type);
+            return true;
         } catch (e) {
             console.log(e);
             return false;
         }
+    }
+
+    private validateUsers() {
+        if (this.main !== null)
+            this.validateUser('main')
+                .then((valid) => {
+                    if (valid === false) this.invalidateUser('main');
+                })
+                .catch((e) => {
+                    console.log(e);
+                });
+
+        if (this.bot !== null)
+            this.validateUser('bot')
+                .then((valid) => {
+                    if (valid === false) this.invalidateUser('bot');
+                })
+                .catch((e) => {
+                    console.log(e);
+                });
     }
 
     private connectBot() {

@@ -232,22 +232,26 @@ espresso.actions.register({
     version: '1.0.0',
     settings: acceptRewardSettings,
     // @ts-ignore
-    run: async (triggerSettings, actionSettings: AcceptRejectReward, triggerData) => {
-        const redemtionId = espresso.parseVariables(actionSettings.redemtionId, triggerData);
-        const mainId = espresso.store.get('twitch.main.id');
+    run: (triggerSettings, actionSettings: AcceptRejectReward, triggerData) => {
+        return new Promise((resolve, reject) => {
+            const redemtionId = espresso.parseVariables(actionSettings.redemtionId, triggerData);
+            const mainId = espresso.store.get('twitch.main.id');
 
-        if (mainId === null) return false;
+            if (mainId === null) return false;
 
-        try {
-            await TwitchAPIFetch(
+            TwitchAPIFetch(
                 `https://api.twitch.tv/helix/channel_points/custom_rewards/redemptions?broadcaster_id=${mainId}&reward_id=${actionSettings.rewardId}&id=${redemtionId}`,
                 'PATCH',
                 { status: 'FULFILLED' }
-            );
-            return true;
-        } catch (e) {
-            return false;
-        }
+            )
+                .then((res) => {
+                    if (res.ok) resolve(true);
+                    else reject();
+                })
+                .catch(() => {
+                    reject();
+                });
+        });
     },
 });
 
@@ -284,21 +288,25 @@ espresso.actions.register({
     version: '1.0.0',
     settings: rejectRewardSettings,
     // @ts-ignore
-    run: async (triggerSettings, actionSettings: AcceptRejectReward, triggerData) => {
-        const redemtionId = espresso.parseVariables(actionSettings.redemtionId, triggerData);
-        const mainId = espresso.store.get('twitch.main.id');
+    run: (triggerSettings, actionSettings: AcceptRejectReward, triggerData) => {
+        return new Promise((resolve, reject) => {
+            const redemtionId = espresso.parseVariables(actionSettings.redemtionId, triggerData);
+            const mainId = espresso.store.get('twitch.main.id');
 
-        if (mainId === null) return false;
+            if (mainId === null) return false;
 
-        try {
-            await TwitchAPIFetch(
+            TwitchAPIFetch(
                 `https://api.twitch.tv/helix/channel_points/custom_rewards/redemptions?broadcaster_id=${mainId}&reward_id=${actionSettings.rewardId}&id=${redemtionId}`,
                 'PATCH',
                 { status: 'CANCELED' }
-            );
-            return true;
-        } catch (e) {
-            return false;
-        }
+            )
+                .then((res) => {
+                    if (res.ok) resolve(true);
+                    else reject();
+                })
+                .catch(() => {
+                    reject();
+                });
+        });
     },
 });

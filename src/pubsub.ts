@@ -95,6 +95,12 @@ class TwitchPubSub {
                 }
                 break;
 
+            case 'RESPONSE':
+                if (event.error && event.error !== '') {
+                    console.log(event);
+                }
+                break;
+
             case 'RECONNECT':
                 espresso.events.dispatch('twitch:pubsub-server-reconnect');
                 break;

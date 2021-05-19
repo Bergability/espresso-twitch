@@ -12,11 +12,15 @@ espresso.options.register({
         if (mainId === null) return [];
 
         try {
-            const json = await TwitchAPIFetch(`https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=${mainId}`, 'GET');
-            const options = (json as CustomRewardPayload).data.reduce<Option[]>((acc, reward) => {
-                return [...acc, { text: reward.title, value: reward.id }];
-            }, []);
-            return options;
+            const res = await TwitchAPIFetch(`https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=${mainId}`, 'GET');
+
+            if (res.ok) {
+                const json: CustomRewardPayload = await res.json();
+                const options = json.data.reduce<Option[]>((acc, reward) => {
+                    return [...acc, { text: reward.title, value: reward.id }];
+                }, []);
+                return options;
+            } else return [];
         } catch (e) {
             console.log(e);
             return [];
@@ -31,14 +35,18 @@ espresso.options.register({
         if (mainId === null) return [];
 
         try {
-            const json = await TwitchAPIFetch(
+            const res = await TwitchAPIFetch(
                 `https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=${mainId}&only_manageable_rewards=true`,
                 'GET'
             );
-            const options = (json as CustomRewardPayload).data.reduce<Option[]>((acc, reward) => {
-                return [...acc, { text: reward.title, value: reward.id }];
-            }, []);
-            return options;
+
+            if (res.ok) {
+                const json: CustomRewardPayload = await res.json();
+                const options = json.data.reduce<Option[]>((acc, reward) => {
+                    return [...acc, { text: reward.title, value: reward.id }];
+                }, []);
+                return options;
+            } else return [];
         } catch (e) {
             console.log(e);
             return [];

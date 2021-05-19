@@ -23,7 +23,7 @@ espresso.server.register({
             is_enabled: false,
         })
             .then((r) => {
-                res.send();
+                res.status(r.status).send();
             })
             .catch((e) => {
                 console.log(e);

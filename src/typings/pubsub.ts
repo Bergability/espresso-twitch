@@ -1,5 +1,6 @@
 export interface PubSubMessage {
-    type: 'MESSAGE' | 'PONG' | 'RECONNECT';
+    type: 'MESSAGE' | 'PONG' | 'RECONNECT' | 'RESPONSE';
+    error?: string;
     data: {
         topic: string;
         message: string;
@@ -144,7 +145,7 @@ export interface ParsedNormalSubEvent {
     sub_plan: 'Prime' | '1000' | '2000' | '3000';
     sub_plan_name: string;
     cumulative_months: number;
-    streak_months: number;
+    streak_months: number | undefined;
     context: 'sub' | 'resub';
     is_gift: false;
     sub_message: SubMessage;
