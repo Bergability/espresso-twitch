@@ -47,6 +47,7 @@ class EspressoTwitchBot {
                 const messageData = {
                     message,
                     username: tags['display-name'],
+                    badges: tags.badges,
                 };
 
                 exclude = [...exclude, ...espresso.triggers.trigger('twitch:chat-message', messageData, exclude)];

@@ -1,6 +1,8 @@
 import { Espresso } from '../../../../espresso/declarations/core/espresso';
 import { Input } from '../../../../espresso/declarations/typings/inputs';
+import { Item, List } from '../../../../espresso/declarations/typings/items';
 import { Variable } from '../../../../espresso/declarations/typings/espresso';
+import { Badges } from 'tmi.js';
 
 declare const espresso: Espresso;
 
@@ -18,7 +20,10 @@ espresso.triggers.register({
     name: 'Chat message',
     provider: 'Twitch',
     catigory: 'Chat',
-    // TODO add vars
+    variables: [
+        { name: 'message', description: 'The chat message containing this command.' },
+        { name: 'username', description: 'The username of the user who sent this message.' },
+    ],
 });
 
 interface TwtichChatMessageContains {
@@ -49,6 +54,10 @@ espresso.triggers.register({
     catigory: 'Chat',
     version: '1.0.0',
     settings: TwtichChatMessageContainsSettings,
+    variables: [
+        { name: 'message', description: 'The chat message containing this command.' },
+        { name: 'username', description: 'The username of the user who sent this message.' },
+    ],
     predicate: (data: ChatMessageData, settings: TwtichChatMessageContains) => {
         let shouldRun = false;
 
@@ -72,6 +81,10 @@ interface CommandVariable {
 
 interface ChatCommand {
     aliases: string[];
+    limit: boolean;
+    roles: string[];
+    useList: boolean;
+    list: string;
     useVariables: boolean;
     variables: CommandVariable[];
     requireLast: boolean;
@@ -87,6 +100,52 @@ const ChatCommandSettings: Input<ChatCommand, CommandVariable>[] = [
         emptyText: 'No command aliases',
         textTransform: 'lowercase',
         duplicates: false,
+    },
+    {
+        type: 'toggle',
+        key: 'limit',
+        label: 'Limit command usage to certain users.',
+        default: false,
+    },
+    {
+        type: 'select',
+        key: 'roles',
+        label: 'Roles allowed to use this command.',
+        options: [
+            { text: 'Broadcaster', value: 'broadcaster' },
+            { text: 'Moderators', value: 'moderator' },
+            { text: 'VIPs', value: 'vip' },
+            { text: 'Founders', value: 'founder' },
+            { text: 'Subscribers', value: 'subscriber' },
+            { text: 'Sub Gifter', value: 'sub-gifter' },
+            { text: 'Bits leader', value: 'bits-leader' },
+            { text: 'Bits (Someone with a bit badge)', value: 'bits' },
+            { text: 'Partner', value: 'partner' },
+        ],
+        helper: 'These roles are based on chat badges, if a user is not showing a badge for their role they will not have access to this command.',
+        multiple: true,
+        default: [],
+        conditions: [{ value: 'limit', operator: 'equal', comparison: true }],
+    },
+    {
+        type: 'toggle',
+        key: 'useList',
+        label: 'Allow usernames from a list to use this command?',
+        default: false,
+        conditions: [{ value: 'limit', operator: 'equal', comparison: true }],
+    },
+    {
+        type: 'select',
+        label: 'User list',
+        key: 'list',
+        options: 'espresso:lists',
+        default: '',
+        conditions: [
+            [
+                { value: 'limit', operator: 'equal', comparison: true },
+                { value: 'useList', operator: 'equal', comparison: true },
+            ],
+        ],
     },
     {
         type: 'toggle',
@@ -144,9 +203,17 @@ const ChatCommandSettings: Input<ChatCommand, CommandVariable>[] = [
     },
 ];
 
+interface ChatCommandTriggerData {
+    message: string;
+    username: string;
+    badges: Badges;
+    aliase: string;
+    [key: string]: any;
+}
+
 espresso.triggers.register({
     slug: 'twitch:chat-command',
-    name: 'Twitch chat command',
+    name: 'Chat command',
     provider: 'Twitch',
     catigory: 'Chat',
     version: '1.0.0',
@@ -161,7 +228,7 @@ espresso.triggers.register({
             return [...acc, { name, description }];
         }, variables);
     },
-    getVariables: (triggerData: any, triggerSettings: ChatCommand) => {
+    getVariables: (triggerData: ChatCommandTriggerData, triggerSettings: ChatCommand) => {
         // Exit if not using variables
         if (!triggerSettings.useVariables) return triggerData;
 
@@ -179,8 +246,64 @@ espresso.triggers.register({
         });
         return triggerData;
     },
-    predicate: (data: ChatMessageData & { aliase: string }, settings: ChatCommand) => {
-        return settings.aliases.includes(data.aliase);
+    predicate: (triggerData: ChatCommandTriggerData, settings: ChatCommand) => {
+        const { aliase, badges, username } = triggerData;
+        const { limit, useList, list: listId, roles } = settings;
+
+        // If the command aliase is not one of the set aliases DO NOT RUN!
+        if (!settings.aliases.includes(aliase)) return false;
+
+        /**
+         * User limit logic
+         * If there is a limit on who can use this command
+         * default to returning `false`.
+         */
+        if (limit) {
+            console.log('in limit');
+
+            console.log(roles);
+            console.log(badges);
+
+            // If roles are selected check those first
+            if (Array.isArray(roles) && roles.length > 0) {
+                // Loop over each role and see if the user has at least one
+                const hasRole = roles.reduce<boolean>((acc, role) => {
+                    if (badges[role] !== undefined) return true;
+                    return acc;
+                }, false);
+
+                console.log(`Has role: ${hasRole}`);
+
+                // If the user has at least one role they can run the command!
+                if (hasRole) return true;
+            }
+
+            // Check if the command uses a list of users
+            if (useList) {
+                const items = espresso.store.get('items') as Item[];
+                const list = items.find((i) => i.id === listId && i.type === 'list') as List;
+
+                // If we can't find the list we can't verify the user has access
+                if (!list) return false;
+
+                // This is the final check
+                const isInList = list.items.reduce<boolean>((acc, entry) => {
+                    // If the username is in the list return true
+                    if (entry.toLowerCase() === username.toLowerCase()) return true;
+                    return acc;
+                }, false);
+
+                console.log(`In list: ${isInList}`);
+
+                if (isInList) return true;
+            }
+
+            // Deny access to the command by default
+            return false;
+        }
+
+        // If none of the above conditions are met assume the command can be run
+        return true;
     },
 });
 
