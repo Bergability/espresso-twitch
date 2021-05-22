@@ -23,6 +23,16 @@ class EspressoTwitchBot {
         // Set event listeners
         this.client.on('message', this.onMessage.bind(this));
 
+        this.client.on('hosted', this.onHosted.bind(this));
+        this.client.on('raided', this.onRaid.bind(this));
+
+        this.client.on('emoteonly', this.onEmoteOnly.bind(this));
+        this.client.on('followersonly', this.onFollowerOnly.bind(this));
+        this.client.on('r9kbeta', this.onR9K.bind(this));
+        this.client.on('slowmode', this.onSlowMode.bind(this));
+        this.client.on('subscribers', this.onSubOnly.bind(this));
+        // this.client.on('join', this.onUserJoin.bind(this));
+
         this.client
             .connect()
             .then(() => {
@@ -65,6 +75,54 @@ class EspressoTwitchBot {
                 break;
         }
     }
+
+    private onHosted(channel: string, username: string, viewers: number, autohost: boolean) {
+        let exclude: string[] = [];
+
+        exclude = [...espresso.triggers.trigger('twitch:all-host-events', { username, viewers, autohost }), ...exclude];
+        if (autohost === false) {
+            exclude = [...espresso.triggers.trigger('twitch:channel-hosted', { username, viewers, autohost }), ...exclude];
+        } else if (autohost === true) {
+            exclude = [...espresso.triggers.trigger('twitch:channel-autohosted', { username, viewers, autohost }), ...exclude];
+        }
+    }
+
+    private onRaid(channel: string, username: string, viewers: number) {
+        espresso.triggers.trigger('twitch:channel-raided', { username, viewers });
+    }
+
+    private onEmoteOnly(channel: string, enabled: boolean) {
+        if (enabled) espresso.triggers.trigger('twitch:chat-emotes-only-enabled');
+        else espresso.triggers.trigger('twitch:chat-emotes-only-disabled');
+    }
+
+    // Length is in mins
+    private onFollowerOnly(channel: string, enabled: boolean, length: number) {
+        if (enabled) espresso.triggers.trigger('twitch:chat-follower-only-enabled', { length });
+        else espresso.triggers.trigger('twitch:chat-follower-only-disabled');
+    }
+
+    private onR9K(channel: string, enabled: boolean) {
+        if (enabled) espresso.triggers.trigger('twitch:chat-r9k-mode-enabled');
+        else espresso.triggers.trigger('twitch:chat-r9k-mode-disabled');
+    }
+
+    // Length is in sec
+    private onSlowMode(channel: string, enabled: boolean, length: number) {
+        if (enabled) espresso.triggers.trigger('twitch:chat-slow-mode-enabled', { length });
+        else espresso.triggers.trigger('twitch:chat-slow-mode-disabled');
+    }
+
+    private onSubOnly(channel: string, enabled: boolean) {
+        if (enabled) espresso.triggers.trigger('twitch:chat-sub-only-enabled');
+        else espresso.triggers.trigger('twitch:chat-sub-only-disabled');
+    }
+
+    // private onUserJoin(channel: string, username: string, self: boolean) {
+    //     // Never react to the bot doing anything
+    //     if (self) return;
+    //     espresso.triggers.trigger('twitch:user-joined-chat', { username });
+    // }
 }
 
 export default EspressoTwitchBot;

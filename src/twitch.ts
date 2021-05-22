@@ -85,6 +85,7 @@ class Twitch {
                         'Connect your Twitch account to connect to chat and recieve events. Without both accounts linked you will not be able to use the actions and triggers provided by the Twitch plugin.',
                     dismissible: false,
                     slug: 'twitch:link-account',
+                    color: '#f44336',
                     actions: [{ text: 'Open Twitch settings', link: `http://localhost:${espresso.store.get('port')}/twitch` }],
                 });
             }

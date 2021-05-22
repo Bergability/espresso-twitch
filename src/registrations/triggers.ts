@@ -104,7 +104,7 @@ const ChatCommandSettings: Input<ChatCommand, CommandVariable>[] = [
     {
         type: 'section',
         title: 'Command usage settings',
-        description: 'The following settings allow you to set who can use this command. This can be based on username, role, or chat badges.',
+        description: ['The following settings allow you to set who can use this command. This can be based on username, role, or chat badges.'],
         inputs: [
             {
                 type: 'toggle',
@@ -159,8 +159,9 @@ const ChatCommandSettings: Input<ChatCommand, CommandVariable>[] = [
     {
         type: 'section',
         title: 'Command Variables',
-        description:
+        description: [
             'Command variables allow you to pull words from the command message and use them in your action set. For example this can be used to create a "!ban [username]" command.',
+        ],
         inputs: [
             {
                 type: 'toggle',
@@ -200,7 +201,7 @@ const ChatCommandSettings: Input<ChatCommand, CommandVariable>[] = [
                 conditions: [
                     [
                         { value: 'useVariables', operator: 'equal', comparison: true },
-                        { value: 'variables', operator: 'array-length-greater-than', comparison: 0 },
+                        // { value: 'variables', operator: 'array-length-greater-than', comparison: 0 },
                     ],
                 ],
             },
@@ -212,7 +213,7 @@ const ChatCommandSettings: Input<ChatCommand, CommandVariable>[] = [
                 conditions: [
                     [
                         { value: 'useVariables', operator: 'equal', comparison: true },
-                        { value: 'variables', operator: 'array-length-greater-than', comparison: 0 },
+                        // { value: 'variables', operator: 'array-length-greater-than', comparison: 0 },
                     ],
                 ],
             },
@@ -642,4 +643,172 @@ espresso.triggers.register({
     variables: giftSubVariables,
     settings: twitchResubSettings,
     predicate: subPredicate,
+});
+
+/**
+ *
+ * User joined chat
+ *
+ */
+// interface TwitchUserJoinedChatSettings {
+//     usernames: string[];
+// }
+
+// const twitchUserJoinedChatSettings: Input<TwitchUserJoinedChatSettings>[] = [
+//     {
+//         type: 'chips',
+//         key: 'usernames',
+//         default: [],
+//         label: 'Users',
+//         duplicates: false,
+//         emptyText: 'No usernames set.',
+//     },
+// ];
+// espresso.triggers.register({
+//     slug: 'twitch:user-joined-chat',
+//     name: 'User joined chat',
+//     provider: 'Twitch',
+//     catigory: 'Chat',
+//     version: '1.0.0',
+//     settings: twitchUserJoinedChatSettings,
+//     variables: [{ name: 'username', description: 'The username of the user who joinned chat' }],
+//     predicate: (data: { username: string }, settings: TwitchUserJoinedChatSettings) => {
+//         return settings.usernames.reduce<boolean>((acc, u) => {
+//             if (u.toLowerCase() === data.username.toLowerCase()) return true;
+//             return acc;
+//         }, false);
+//     },
+// });
+
+/**
+ *
+ * Hosts and raids
+ *
+ */
+espresso.triggers.register({
+    slug: 'twitch:all-host-events',
+    name: 'All host events',
+    provider: 'Twitch',
+    catigory: 'Hosts / Raids',
+    variables: [
+        { name: 'username', description: 'The name of the user who hosted the channel' },
+        { name: 'viewers', description: 'The number of viewers from the host' },
+        { name: 'autohost', description: 'If this was an auto host or not' },
+    ],
+});
+
+espresso.triggers.register({
+    slug: 'twitch:channel-hosted',
+    name: 'Channel hosted',
+    provider: 'Twitch',
+    catigory: 'Hosts / Raids',
+    variables: [
+        { name: 'username', description: 'The name of the user who hosted the channel' },
+        { name: 'viewers', description: 'The number of viewers from the host' },
+    ],
+});
+
+espresso.triggers.register({
+    slug: 'twitch:channel-autohosted',
+    name: 'Channel autohosted',
+    provider: 'Twitch',
+    catigory: 'Hosts / Raids',
+    variables: [
+        { name: 'username', description: 'The name of the user who hosted the channel' },
+        { name: 'viewers', description: 'The number of viewers from the host' },
+    ],
+});
+
+espresso.triggers.register({
+    slug: 'twitch:channel-raided',
+    name: 'Channel raided',
+    provider: 'Twitch',
+    catigory: 'Hosts / Raids',
+    variables: [
+        { name: 'username', description: 'The name of the user who raided the channel' },
+        { name: 'viewers', description: 'The number of viewers from the raid' },
+    ],
+});
+
+/**
+ *
+ * Chat room states
+ *
+ */
+
+// Emotes only
+espresso.triggers.register({
+    slug: 'twitch:chat-emotes-only-enabled',
+    name: 'Emotes only mode enabled',
+    provider: 'Twitch',
+    catigory: 'Chat Room State',
+});
+
+espresso.triggers.register({
+    slug: 'twitch:chat-emotes-only-disabled',
+    name: 'Emotes only mode disabled',
+    provider: 'Twitch',
+    catigory: 'Chat Room State',
+});
+
+// Follower only
+espresso.triggers.register({
+    slug: 'twitch:chat-follower-only-enabled',
+    name: 'Follower only mode enabled',
+    provider: 'Twitch',
+    catigory: 'Chat Room State',
+    variables: [{ name: 'length', description: 'The amount of time (in min.) that a user must have followed for.' }],
+});
+
+espresso.triggers.register({
+    slug: 'twitch:chat-follower-only-disabled',
+    name: 'Follower only mode disabled',
+    provider: 'Twitch',
+    catigory: 'Chat Room State',
+});
+
+// R9K
+espresso.triggers.register({
+    slug: 'twitch:chat-r9k-mode-enabled',
+    name: 'R9K mode enabled',
+    provider: 'Twitch',
+    catigory: 'Chat Room State',
+});
+
+espresso.triggers.register({
+    slug: 'twitch:chat-r9k-mode-disabled',
+    name: 'R9K mode disabled',
+    provider: 'Twitch',
+    catigory: 'Chat Room State',
+});
+
+// Slow mode
+espresso.triggers.register({
+    slug: 'twitch:chat-slow-mode-enabled',
+    name: 'Slow mode enabled',
+    provider: 'Twitch',
+    catigory: 'Chat Room State',
+    variables: [{ name: 'length', description: 'The amount of time (in sec.) between user messsages.' }],
+});
+
+espresso.triggers.register({
+    slug: 'twitch:chat-slow-mode-disabled',
+    name: 'Slow mode disabled',
+    provider: 'Twitch',
+    catigory: 'Chat Room State',
+});
+
+// Sub only mode
+espresso.triggers.register({
+    slug: 'twitch:chat-sub-only-enabled',
+    name: 'Subscriber only mode enabled',
+    provider: 'Twitch',
+    catigory: 'Chat Room State',
+});
+
+espresso.triggers.register({
+    slug: 'twitch:chat-sub-only-disabled',
+    name: 'Subscriber only mode disabled',
+    provider: 'Twitch',
+    catigory: 'Chat Room State',
 });
