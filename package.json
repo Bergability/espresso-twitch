@@ -4,7 +4,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "package": "zip ./espresso-twitch.zip dist/* public/* manifest.json"
+    "package": "zip ./espresso-twitch.zip dist/**/* public/**/* manifest.json"
   },
   "author": "",
   "license": "ISC",
