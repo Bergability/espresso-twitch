@@ -1,6 +1,6 @@
 import './triggers/chat';
 import './triggers/hosts-raids';
-import './triggers/moderation';
+// import './triggers/moderation';
 import './triggers/rewards';
 import './triggers/room-state';
 import './triggers/subscriptions';
