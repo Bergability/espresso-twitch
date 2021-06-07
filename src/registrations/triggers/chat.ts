@@ -67,6 +67,7 @@ espresso.triggers.register({
     variables: [
         { name: 'message', description: 'The chat message containing this command.' },
         { name: 'username', description: 'The username of the user who sent this message.' },
+        { name: 'color', description: 'The color of the users name in chat.' },
     ],
 });
 
@@ -171,8 +172,7 @@ const ChatCommandSettings: Input<ChatCommand, CommandVariable>[] = [
                     { text: 'Bits (Someone with a bit badge)', value: 'bits' },
                     { text: 'Partner', value: 'partner' },
                 ],
-                helper:
-                    'These roles are based on chat badges, if a user is not showing a badge for their role they will not have access to this command.',
+                helper: 'These roles are based on chat badges, if a user is not showing a badge for their role they will not have access to this command.',
                 multiple: true,
                 default: [],
                 conditions: [{ value: 'limit', operator: 'equal', comparison: true }],
@@ -284,6 +284,7 @@ espresso.triggers.register({
         const variables: Variable[] = [
             { name: 'message', description: 'The chat message containing this command.' },
             { name: 'username', description: 'The username of the user who sent this message.' },
+            { name: 'color', description: 'The color of the users name in chat.' },
         ];
 
         return settings.variables.reduce<Variable[]>((acc, { name, description }) => {

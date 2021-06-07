@@ -223,6 +223,7 @@ class TwitchPubSub {
         switch (message.type) {
             case 'reward-redeemed':
                 espresso.triggers.trigger('twitch:custom-reward', {
+                    message: message.data.redemption.user_input,
                     username: message.data.redemption.user.display_name,
                     redemption_id: message.data.redemption.id,
                     reward_id: message.data.redemption.reward.id,

@@ -58,6 +58,7 @@ class EspressoTwitchBot {
                     message,
                     username: tags['display-name'],
                     badges: tags.badges,
+                    color: tags.color || '#ff00ff',
                 };
 
                 exclude = [...exclude, ...espresso.triggers.trigger('twitch:chat-message', messageData, exclude)];
