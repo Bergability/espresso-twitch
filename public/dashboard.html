@@ -172,9 +172,7 @@
       const botAction = document.getElementById("bot-account-action");
       const botCircle = document.getElementById("bot-circle");
 
-      const clientId = "kybgbb011cg2tnx6z1tjckxdutfkmu";
       const redirectUrl = `http://localhost:23167/twitch/auth`;
-      const authUrl = `https://id.twitch.tv/oauth2/authorize?client_id=${clientId}&response_type=token`;
 
       const userScopes = [
         "bits:read",
@@ -193,6 +191,7 @@
       const botScopes = ["channel:moderate", "chat:edit", "chat:read"];
 
       const getAuthURL = (type) => {
+        const authUrl = `https://id.twitch.tv/oauth2/authorize?client_id=${window.twitchClientID}&response_type=token`;
         switch (type) {
           case "main":
             return `${authUrl}&redirect_uri=${
@@ -256,7 +255,6 @@
             break;
 
           case "twitch:user-invalidated":
-            console.log("hereee?");
             switch (json.data) {
               case "main":
                 disconnectUser("main");
@@ -295,6 +293,18 @@
 
       mainAction.addEventListener("click", onClick);
       botAction.addEventListener("click", onClick);
+
+      const getClient = async () => {
+        try {
+          const clientReq = await fetch("/twitch/client");
+          const clientJson = await clientReq.json();
+          window.twitchClientID = clientJson.clientId;
+
+          init();
+        } catch (e) {
+          throw e;
+        }
+      };
 
       const init = async () => {
         try {
@@ -357,7 +367,7 @@
           });
       });
 
-      init();
+      getClient();
     </script>
   </body>
 </html>

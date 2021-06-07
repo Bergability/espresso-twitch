@@ -60,6 +60,7 @@ export interface PubSubRewardRedemtion {
             redemptions_redeemed_current_stream?: any;
             cooldown_expires_at?: any;
         };
+        user_input?: string;
         status: string;
     };
 }

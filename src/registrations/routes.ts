@@ -1,5 +1,5 @@
 import path from 'path';
-import { clientId } from 'src/tokens';
+import { clientId } from '../tokens';
 import { Espresso } from '../../../../espresso/declarations/core/espresso';
 import TwitchAPIFetch from '../api';
 import Twitch from '../twitch';
@@ -29,6 +29,14 @@ espresso.server.register({
                 console.log(e);
                 res.status(500).send(e);
             });
+    },
+});
+
+espresso.server.register({
+    path: '/twitch/client',
+    method: 'get',
+    response: (req, res) => {
+        res.json({ clientId });
     },
 });
 

@@ -1,3 +1,4 @@
 dist
 node_modules
 espresso-twitch.zip
+src/tokens.ts

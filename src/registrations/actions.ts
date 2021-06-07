@@ -218,7 +218,7 @@ const acceptRewardSettings: Input<AcceptRejectReward>[] = [
     {
         type: 'button',
         label: 'Create new reward',
-        link: `http://localhost:${espresso.store.get('port')}/twitch/new-custom-reward`,
+        link: `http://localhost:${espresso.store.get('port')}/twitch`,
         external: true,
     },
 ];
@@ -274,7 +274,7 @@ const rejectRewardSettings: Input<AcceptRejectReward>[] = [
     {
         type: 'button',
         label: 'Create new reward',
-        link: 'http://localhost:23167/twitch/new-custom-reward',
+        link: 'http://localhost:23167/twitch',
         external: true,
     },
 ];
